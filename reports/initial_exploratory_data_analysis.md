@@ -6,18 +6,14 @@ output:
     keep_md: yes
 ---
 
-```{r setup, include=FALSE, echo=FALSE, message=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE)
 
-library(tidyverse)
-library(ggplot2)
-```
 
 ## Initial exploratory data analysis
 
 In this project we using a dataset contain visual and temporal features from 1820 videos uploaded to facebook between august an october 2015 collected by Trzci´nski and Rokita and the data are available in <http://ii.pw.edu.pl/~ttrzcins/facebook_dataset_2015.csv>.
 
-```{r reading-data}
+
+```r
 # Reading data
 facebook_data <- readRDS("../data/processed/facebook_data.rds")
 ```
