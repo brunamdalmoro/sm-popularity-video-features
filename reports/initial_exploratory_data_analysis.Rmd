@@ -15,11 +15,17 @@ library(ggplot2)
 
 ## Initial exploratory data analysis
 
-In this project we using a dataset contain visual and temporal features from 1820 videos uploaded to facebook between august an october 2015 collected by Trzci´nski and Rokita and the data are available in <http://ii.pw.edu.pl/~ttrzcins/facebook_dataset_2015.csv>.
+In this project we using a dataset contain visual and temporal features from 1820 videos uploaded to facebook between August 1st, 2015 until October 15th, 2015 collected by Trzci´nski and Rokita and the data are available in <http://ii.pw.edu.pl/~ttrzcins/facebook_dataset_2015.csv>.
 
 ```{r reading-data}
 # Reading data
-facebook_data <- readRDS("../data/processed/facebook_data.rds")
+facebook_data <- readRDS("../data/raw/facebook_data.rds")
+visual_features <- readRDS("../data/processed/visual_features.rds")
+temporal_features <- readRDS("../data/processed/temporal_features.rds")
 ```
 
 
+```{r distribution}
+
+
+```

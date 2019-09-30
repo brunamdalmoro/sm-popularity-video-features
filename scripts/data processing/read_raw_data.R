@@ -3,4 +3,4 @@ library(tidyverse)
 
 facebook_data <- read_csv("data/raw/facebook_dataset_2015.csv") %>% as_tibble()
 
-write_rds(x = facebook_data, path = "data/processed/facebook_data.rds")
+write_rds(x = facebook_data, path = "data/raw/facebook_data.rds")

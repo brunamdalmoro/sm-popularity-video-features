@@ -11,3 +11,18 @@ Com base em dados extraídos de 1820 vídeos publicados no Facebook [1], neste t
 [2] W. Cho, Y. Lim, H. Lee, M. K. Varma, M. Lee, and E. Choi, “Big Data Analysis with Interactive Visualization using R packages,” in Proceedings of the 2014 International Conference on Big Data Science and Computing - BigDataScience ’14, 2014.
 
 [3] A. Khosla, A. Das Sarma, and R. Hamid, “What makes an image popular?,” in Proceedings of the 23rd international conference on World wide web - WWW ’14, 2014.
+
+## Estrutura do projeto
+```
+├── README.md          	<- Este arquivo, com a definição e estrutura do projeto.
+├── data
+│   ├── processed      	<- Arquivos de dados processados de acordo com a necessidade do projeto.
+│   └── raw            	<- Arquivo de dados original.
+│
+├── reports            	<- Arquivos relacionados a geração de análises em formato markdown: .Rmd, .md e .html.
+│   └── images         	<- Figuras e gráficos gerados nas análises.
+│
+└── scripts            	<- Códigos utilizados para processamento e análise dos dados.
+    ├── data processing	<- Códigos para leitura e processamento dos dados.
+    └── functions		<- Funções utilizadas em outros códigos.
+```
