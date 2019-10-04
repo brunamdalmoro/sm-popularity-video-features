@@ -7,25 +7,65 @@ output:
 ---
 
 ```{r setup, include=FALSE, echo=FALSE, message=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+options(scipen = 999)
 
 library(tidyverse)
 library(ggplot2)
+library(hrbrthemes)
+library(treemapify)
+# library(cluster)
+# library(factoextra)
+
+name_colors <- c("Black", "White", "Blue", "Cyan", "Green", "Yellow", "Orange", "Red", "Magenta", "Other")
+hex_colors <- c("#000000", "#FFFFFF", "#0000FF", "#00FFFF", "#00FF00", "#FFFF00", "#FFA500", "#FF0000", "#FF00FF", "#808080")
 ```
 
 ## Initial exploratory data analysis
 
 In this project we using a dataset contain visual and temporal features from 1820 videos uploaded to facebook between August 1st, 2015 until October 15th, 2015 collected by Trzci´nski and Rokita and the data are available in <http://ii.pw.edu.pl/~ttrzcins/facebook_dataset_2015.csv>.
 
+
+
 ```{r reading-data}
 # Reading data
 facebook_data <- readRDS("../data/raw/facebook_data.rds")
 visual_features <- readRDS("../data/processed/visual_features.rds")
 temporal_features <- readRDS("../data/processed/temporal_features.rds")
+temporal_features_long <- readRDS("../data/processed/temporal_features_long.rds")
 ```
 
 
-```{r distribution}
+
+- decidir qual o n views alvo para regressão (96 horas! 3 dias)
+
+
+```{r choosing-time}
+temporal_features_long %>%
+  filter(feature == "views") %>% 
+  group_by(time) %>%
+  summarise( m_views = mean(value) ) %>%
+  ungroup() %>%
+  ggplot(aes(x = as.numeric(time), y = m_views, group = 1)) +
+  geom_line() +
+  geom_vline(aes(xintercept = 96), colour = "#BB0000", linetype = "dashed") +
+  annotate(geom = "text", x = 92, y = 750000, label = "96h",
+           colour = "#BB0000", size = 3) +
+  labs(x = "Time after publication (hours)", y = "Mean of Views", 
+       title = "Evolution of Video Views") +
+  theme_ipsum()
+```
+
+```{r add-responde-variable}
+visual_features %>%
+  left_join(temporal_features %>% select(facebook_post_id, views_96 = views.96), by = "facebook_post_id") -> visual_96
+```
+
+- correlação? dos views com outras variáveis visuais
+
+```{r correlations}
 
 
 ```
+
+- regressão (qual técnica?)

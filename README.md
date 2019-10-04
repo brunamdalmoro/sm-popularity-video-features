@@ -14,15 +14,15 @@ Com base em dados extraídos de 1820 vídeos publicados no Facebook [1], neste t
 
 ## Estrutura do projeto
 ```
-├── README.md          	<- Este arquivo, com a definição e estrutura do projeto.
-├── data
-│   ├── processed      	<- Arquivos de dados processados de acordo com a necessidade do projeto.
-│   └── raw            	<- Arquivo de dados original.
+├── README.md			<- Este arquivo, com a definição e estrutura do projeto.
+├── data				<- Arquivos de dados processados de acordo com a necessidade do projeto.
+│   ├── processed		<- Arquivos de dados processados de acordo com a necessidade do projeto.
+│   └── raw				<- Arquivo de dados original.
 │
-├── reports            	<- Arquivos relacionados a geração de análises em formato markdown: .Rmd, .md e .html.
-│   └── images         	<- Figuras e gráficos gerados nas análises.
+├── reports				<- Arquivos relacionados a geração de análises em formato markdown: .Rmd, .md e .html.
+│   └── images			<- Figuras e gráficos gerados nas análises.
 │
-└── scripts            	<- Códigos utilizados para processamento e análise dos dados.
+└── scripts				<- Códigos utilizados para processamento e análise dos dados.
     ├── data processing	<- Códigos para leitura e processamento dos dados.
     └── functions		<- Funções utilizadas em outros códigos.
 ```
