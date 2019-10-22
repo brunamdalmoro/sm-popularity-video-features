@@ -1,5 +1,5 @@
 ---
-title: "Exploratory Data Analysis"
+title: "Predicting Number of Views"
 author: "Bruna Martini Dalmoro"
 output:
   html_document:
@@ -10,8 +10,9 @@ output:
 
 ## Initial exploratory data analysis
 
-In this project we using a dataset contain visual and temporal features from 1820 videos uploaded to facebook between August 1st, 2015 until October 15th, 2015 collected by Trzci´nski and Rokita and the data are available in <http://ii.pw.edu.pl/~ttrzcins/facebook_dataset_2015.csv>.
+In this project we use a dataset containing visual and temporal features from 1820 videos uploaded to facebook between August 1st, 2015 until October 15th, 2015 collected by Trzci´nski and Rokita and the data are available in <http://ii.pw.edu.pl/~ttrzcins/facebook_dataset_2015.csv>.
 
+Our focus is on analysing the visual features, looking for some clue about the relationship between these visual features and the video popularity.
 
 
 
@@ -45,13 +46,18 @@ temporal_features_long %>%
   theme_ipsum()
 ```
 
-![](initial_exploratory_data_analysis_files/figure-html/choosing-time-1.png)<!-- -->
+![](predicting-number-of-views_files/figure-html/choosing-time-1.png)<!-- -->
 
 
 ```r
 visual_features %>%
-  left_join(temporal_features %>% select(facebook_post_id, views_96 = views.96), by = "facebook_post_id") -> visual_96
+  left_join(temporal_features %>% select(facebook_post_id, views_96 = views.96),
+            by = "facebook_post_id") -> visual_96
 ```
+
+- descritivas básicas de todas as variáveis visuais
+
+
 
 - correlação? dos views com outras variáveis visuais
 
