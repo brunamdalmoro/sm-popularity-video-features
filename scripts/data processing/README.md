@@ -1,4 +1,4 @@
-# Arquivos:
+# R Files:
 
 `read_raw_data.R` - read raw data and save as .rds to use in analysis.
 
