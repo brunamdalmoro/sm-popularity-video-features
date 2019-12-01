@@ -7,18 +7,25 @@ output:
 ---
 
 ```{r setup, include=FALSE, echo=FALSE, message=FALSE}
+# Chunck options default
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-options(scipen = 999)
 
-library(tidyverse)
-library(ggplot2)
-library(hrbrthemes)
-# library(treemapify)
-# library(cluster)
-# library(factoextra)
+# Options (remove scientific notation)
+options(scipen = 999, qwraps2_markup = 'markdown')
 
-name_colors <- c("Black", "White", "Blue", "Cyan", "Green", "Yellow", "Orange", "Red", "Magenta", "Other")
-hex_colors <- c("#000000", "#FFFFFF", "#0000FF", "#00FFFF", "#00FF00", "#FFFF00", "#FFA500", "#FF0000", "#FF00FF", "#808080")
+# Seed
+set.seed(1234)
+
+library(tidyverse)  # Clean, process, model, and visualize data
+library(hrbrthemes) # Theme plots
+library(qwraps2)    # Beautiful descriptive tables
+library(factoextra) # PCA Analisys
+library(rpart)      # Decision Trees
+library(rpart.plot) # Decision Trees
+library(randomForest) # Random Forest Models
+library(caret)      # Cross Validation
+library(ROCR)       # ROC curve
+
 ```
 
 ## Initial exploratory data analysis
@@ -28,20 +35,74 @@ In this project we use a dataset containing visual and temporal features from 18
 Our focus is on analysing the visual features, looking for some clue about the relationship between these visual features and the video popularity.
 
 
-```{r reading-data}
-# Reading data
-facebook_data <- readRDS("../data/raw/facebook_data.rds")
-visual_features <- readRDS("../data/processed/visual_features.rds")
-temporal_features <- readRDS("../data/processed/temporal_features.rds")
-temporal_features_long <- readRDS("../data/processed/temporal_features_long.rds")
+```{r reading-external-data}
+# Reading original data
+facebook_data <- read_rds("data/raw/facebook_dataset.rds")
+```
+
+```{r split-dataset}
+# Split visual and temporal features
+visual_features <- select(facebook_data, facebook_post_id:title.sentiment) %>% as_tibble()
+temporal_features <- select(facebook_data, facebook_post_id, views.1:likes.168) %>% as_tibble()
+```
+
+
+- EXPLORAÇÃO DO DATA SET---------------------------------------------------------------------
+
+# Visual features
+
+```{r data-structure-visual-features}
+# Structure of data
+glimpse(visual_features)
+
+# Ajusting data
+visual_features <- visual_features %>%
+  # ajusting type of feature
+  mutate(
+    dominant_color.value = as.factor(dominant_color.value)
+  ) %>%
+  # rename features
+  rename(
+    dominant_color.histogram_0 = `dominant_color.histogram[0]`,
+    dominant_color.histogram_1 = `dominant_color.histogram[1]`,
+    dominant_color.histogram_2 = `dominant_color.histogram[2]`,
+    dominant_color.histogram_3 = `dominant_color.histogram[3]`,
+    dominant_color.histogram_4 = `dominant_color.histogram[4]`,
+    dominant_color.histogram_5 = `dominant_color.histogram[5]`,
+    dominant_color.histogram_6 = `dominant_color.histogram[6]`,
+    dominant_color.histogram_7 = `dominant_color.histogram[7]`,
+    dominant_color.histogram_8 = `dominant_color.histogram[8]`,
+    dominant_color.histogram_9 = `dominant_color.histogram[9]`,
+    shot_detection.transition_histogram_0 = `shot_detection.transition_histogram[0]`,
+    shot_detection.transition_histogram_1 = `shot_detection.transition_histogram[1]` 
+  ) %>%
+  # remove nonvisual feature
+  select(-title.sentiment)
+```
+
+
+#--------------------------------------------------
+# Gráficos explorando as features aqui!
+
+
+```{r summary_visual_features, results='asis'}
+visual_features %>% select(-facebook_post_id) %>% summary_table(.)
 ```
 
 
 
-- decidir qual o n views alvo para regressão (96 horas! 3 dias)
 
+```{r reshape-temporal-features}
+# Reshape temporal features to analize
+temporal_features %>%
+  gather(feature, value, views.1:likes.168, factor_key=TRUE) %>%
+  separate(feature, c("feature", "time"), "[.]") -> temporal_features_long
+```
+
+## Choosing the model target
 
 ```{r choosing-time}
+# Choosing the time of number of views to preditc
 temporal_features_long %>%
   filter(feature == "views") %>% 
   group_by(time) %>%
@@ -57,25 +118,840 @@ temporal_features_long %>%
   theme_ipsum()
 ```
 
-```{r add-responde-variable}
+## Exploring distribution of views in 96h
+
+```{r add-response-variable}
 visual_features %>%
   left_join(temporal_features %>% select(facebook_post_id, views_96 = views.96),
             by = "facebook_post_id") -> visual_96
 
 ```
 
-- descritivas básicas de todas as variáveis visuais
-
-```{r descritives}
-
+```{r response-distribution}
+visual_96 %>%
+  ggplot(aes(x = 1, y = (views_96))) +
+  geom_boxplot()
 
 ```
 
-- correlação? dos views com outras variáveis visuais
+
+# FEATURE SELECTION
+
+# Exploring correlation with predictor features
 
 ```{r correlations}
+# General
+cor.test(visual_96$general.duration, visual_96$views_96)
+cor.test(visual_96$general.fps, visual_96$views_96)
+cor.test(visual_96$general.frame_count, visual_96$views_96)
+cor.test(visual_96$general.frame_size.height, visual_96$views_96)
+cor.test(visual_96$general.frame_size.width, visual_96$views_96)
+
+# Colors
+cor.test(visual_96$dominant_color.histogram_0, visual_96$views_96)
+cor.test(visual_96$dominant_color.histogram_1, visual_96$views_96)
+cor.test(visual_96$dominant_color.histogram_2, visual_96$views_96)
+cor.test(visual_96$dominant_color.histogram_3, visual_96$views_96)
+cor.test(visual_96$dominant_color.histogram_4, visual_96$views_96)
+cor.test(visual_96$dominant_color.histogram_5, visual_96$views_96)
+cor.test(visual_96$dominant_color.histogram_6, visual_96$views_96)
+cor.test(visual_96$dominant_color.histogram_7, visual_96$views_96)
+cor.test(visual_96$dominant_color.histogram_8, visual_96$views_96)
+cor.test(visual_96$dominant_color.histogram_9, visual_96$views_96)
+
+# Face
+cor.test(visual_96$face_detection.average_face2frame_ratio, visual_96$views_96)
+cor.test(visual_96$face_detection.average_face_count_per_frame, visual_96$views_96)
+cor.test(visual_96$face_detection.average_face_present, visual_96$views_96)
+
+# Text
+cor.test(visual_96$text_detection.average_text2frame_ratio, visual_96$views_96)
+cor.test(visual_96$text_detection.average_text_frames, visual_96$views_96)
+
+# Shot
+cor.test(visual_96$shot_detection.average_shot_length, visual_96$views_96)
+cor.test(visual_96$shot_detection.shots_count, visual_96$views_96)
+cor.test(visual_96$shot_detection.transition_histogram_0, visual_96$views_96)
+cor.test(visual_96$shot_detection.transition_histogram_1, visual_96$views_96)
+
+# Other
+cor.test(visual_96$other.average_movie_speed, visual_96$views_96)
+cor.test(visual_96$other.clutter_metric, visual_96$views_96)
+cor.test(visual_96$rigidity.average_rigidity, visual_96$views_96)
+
+cor(visual_96 %>% select(-facebook_post_id,-dominant_color.value))
+```
+
+
+# Linear models
+
+```{r fit-linear-models}
+## Each feature
+# General
+lm(visual_96$views_96 ~ visual_96$general.duration) %>% summary()
+lm(visual_96$views_96 ~ visual_96$general.fps) %>% summary()
+lm(visual_96$views_96 ~ visual_96$general.frame_count) %>% summary()
+lm(visual_96$views_96 ~ visual_96$general.frame_size.height) %>% summary()
+lm(visual_96$views_96 ~ visual_96$general.frame_size.width) %>% summary()
+
+# Color
+lm(visual_96$views_96 ~ visual_96$dominant_color.histogram_0) %>% summary()
+lm(visual_96$views_96 ~ visual_96$dominant_color.histogram_1) %>% summary()
+lm(visual_96$views_96 ~ visual_96$dominant_color.histogram_2) %>% summary()
+lm(visual_96$views_96 ~ visual_96$dominant_color.histogram_3) %>% summary()
+lm(visual_96$views_96 ~ visual_96$dominant_color.histogram_4) %>% summary()
+lm(visual_96$views_96 ~ visual_96$dominant_color.histogram_5) %>% summary()
+lm(visual_96$views_96 ~ visual_96$dominant_color.histogram_6) %>% summary()
+lm(visual_96$views_96 ~ visual_96$dominant_color.histogram_7) %>% summary()
+lm(visual_96$views_96 ~ visual_96$dominant_color.histogram_8) %>% summary()
+lm(visual_96$views_96 ~ visual_96$dominant_color.histogram_9) %>% summary()
+lm(visual_96$views_96 ~ visual_96$dominant_color.value) %>% summary()
+
+# Face
+lm(visual_96$views_96 ~ visual_96$face_detection.average_face2frame_ratio) %>% summary()
+lm(visual_96$views_96 ~ visual_96$face_detection.average_face_count_per_frame) %>% summary()
+lm(visual_96$views_96 ~ visual_96$face_detection.average_face_present) %>% summary()
+
+# Text
+lm(visual_96$views_96 ~ visual_96$text_detection.average_text2frame_ratio) %>% summary()
+lm(visual_96$views_96 ~ visual_96$text_detection.average_text_frames) %>% summary()
+
+# Shot
+lm(visual_96$views_96 ~ visual_96$shot_detection.average_shot_length) %>% summary()
+lm(visual_96$views_96 ~ visual_96$shot_detection.shots_count) %>% summary()
+lm(visual_96$views_96 ~ visual_96$shot_detection.transition_histogram_0) %>% summary()
+lm(visual_96$views_96 ~ visual_96$shot_detection.transition_histogram_1) %>% summary()
+
+# Other
+lm(visual_96$views_96 ~ visual_96$other.average_movie_speed) %>% summary()
+lm(visual_96$views_96 ~ visual_96$other.clutter_metric) %>% summary()
+lm(visual_96$views_96 ~ visual_96$rigidity.average_rigidity) %>% summary()
+
+## Groupin features
+lm(visual_96$views_96 ~ 
+       visual_96$general.duration +
+       visual_96$general.fps +
+       visual_96$general.frame_count +
+       visual_96$general.frame_size.height) %>% summary()
+
+lm(visual_96$views_96 ~ 
+       visual_96$dominant_color.histogram_0 +
+       visual_96$dominant_color.histogram_1 +
+       visual_96$dominant_color.histogram_2 +
+       visual_96$dominant_color.histogram_3 +
+       visual_96$dominant_color.histogram_4 +
+       visual_96$dominant_color.histogram_5 +
+       visual_96$dominant_color.histogram_6 +
+       visual_96$dominant_color.histogram_7 +
+       visual_96$dominant_color.histogram_8 +
+       visual_96$dominant_color.histogram_9 +
+       visual_96$dominant_color.value) %>% summary()
+
+lm(visual_96$views_96 ~ 
+      visual_96$face_detection.average_face2frame_ratio + 
+      visual_96$face_detection.average_face_count_per_frame + 
+      visual_96$face_detection.average_face_present) %>% summary()
+
+lm(visual_96$views_96 ~ 
+      visual_96$text_detection.average_text2frame_ratio +
+      visual_96$text_detection.average_text_frames) %>% summary()
+
+lm(visual_96$views_96 ~ 
+      visual_96$shot_detection.average_shot_length + 
+      visual_96$shot_detection.shots_count + 
+      visual_96$shot_detection.transition_histogram_0 + 
+      visual_96$shot_detection.transition_histogram_1) %>% summary()
+
+lm(visual_96$views_96 ~ 
+     visual_96$other.average_movie_speed +
+     visual_96$other.clutter_metric +
+     visual_96$rigidity.average_rigidity) %>% summary()
+
+
+## All features
+lm(visual_96$views_96 ~ 
+      visual_96$general.duration +
+      visual_96$general.fps +
+      visual_96$general.frame_count +
+      visual_96$general.frame_size.height +
+      visual_96$dominant_color.histogram_0 +
+      visual_96$dominant_color.histogram_1 +
+      visual_96$dominant_color.histogram_2 +
+      visual_96$dominant_color.histogram_3 +
+      visual_96$dominant_color.histogram_4 +
+      visual_96$dominant_color.histogram_5 +
+      visual_96$dominant_color.histogram_6 +
+      visual_96$dominant_color.histogram_7 +
+      visual_96$dominant_color.histogram_8 +
+      visual_96$dominant_color.histogram_9 +
+      visual_96$dominant_color.value +
+      visual_96$face_detection.average_face2frame_ratio + 
+      visual_96$face_detection.average_face_count_per_frame + 
+      visual_96$face_detection.average_face_present +
+      visual_96$text_detection.average_text2frame_ratio +
+      visual_96$text_detection.average_text_frames +
+      visual_96$shot_detection.average_shot_length + 
+      visual_96$shot_detection.shots_count + 
+      visual_96$shot_detection.transition_histogram_0 + 
+      visual_96$shot_detection.transition_histogram_1 +
+      visual_96$other.average_movie_speed +
+      visual_96$other.clutter_metric +
+      visual_96$rigidity.average_rigidity) %>% summary()
+
+## Selected features
+lm(visual_96$views_96 ~ -1 +
+      visual_96$general.duration +
+      visual_96$general.fps +
+      # visual_96$general.frame_count +
+      visual_96$general.frame_size.height +
+      # visual_96$dominant_color.histogram_0 +
+      # visual_96$dominant_color.histogram_1 +
+      # visual_96$dominant_color.histogram_2 +
+      visual_96$dominant_color.histogram_3 +
+      # visual_96$dominant_color.histogram_4 +
+      # visual_96$dominant_color.histogram_5 +
+      # visual_96$dominant_color.histogram_6 +
+      visual_96$dominant_color.histogram_7 +
+      # visual_96$dominant_color.histogram_8 +
+      # visual_96$dominant_color.histogram_9 +
+      # visual_96$dominant_color.value +
+      # visual_96$face_detection.average_face2frame_ratio + 
+      # visual_96$face_detection.average_face_count_per_frame + 
+      # visual_96$face_detection.average_face_present +
+      # visual_96$text_detection.average_text2frame_ratio +
+      visual_96$text_detection.average_text_frames +
+      # visual_96$shot_detection.average_shot_length + 
+      # visual_96$shot_detection.shots_count + 
+      # visual_96$shot_detection.transition_histogram_0 + 
+      # visual_96$shot_detection.transition_histogram_1 +
+      # visual_96$other.average_movie_speed +
+      # visual_96$other.clutter_metric +
+      visual_96$rigidity.average_rigidity) %>% summary()
+
+```
+
+
+## Categorizing the target
+
+```{r categorical-response}
+# All features and responses
+visual_resp <- visual_96 %>%
+  mutate(
+    quartis = ntile(visual_96$views_96,4) %>% as.factor(),
+    quartil_4 = ifelse(quartis == 4, 1, 0) %>% as.factor(),
+    maior_1m = ifelse(views_96 >= 1000000, 1, 0) %>% as.factor()
+  )
+
+```
+
+## Split dataset 
+
+```{r split-dataset-train-teste}
+train <- visual_resp %>% sample_frac(.70)
+test  <- anti_join(visual_resp, train, by = 'facebook_post_id')
+```
+
+# Decision trees
+
+###Árvores de decisão para variável resposta "quartil" onde cada quartil é uma categoria.
+
+```{r decision-tree-quartis}
+
+tree_general = rpart(quartis ~ -1 +
+                     general.duration +
+                     general.fps +
+                     general.frame_count +
+                     general.frame_size.height, data=train, method = 'class')
+rpart.plot(tree_general)
+
+
+tree_color = rpart(quartis ~ 
+                     dominant_color.histogram_0 +
+                     dominant_color.histogram_1 +
+                     dominant_color.histogram_2 +
+                     dominant_color.histogram_3 +
+                     dominant_color.histogram_4 +
+                     dominant_color.histogram_5 +
+                     dominant_color.histogram_6 +
+                     dominant_color.histogram_7 +
+                     dominant_color.histogram_8 +
+                     dominant_color.histogram_9 +
+                     dominant_color.value, data=train, method = 'class')
+rpart.plot(tree_color)
+
+tree_face = rpart(quartis ~ 
+                    face_detection.average_face2frame_ratio + 
+                    face_detection.average_face_count_per_frame + 
+                    face_detection.average_face_present, data=train, method = 'class')
+
+rpart.plot(tree_face)
+
+tree_text = rpart(quartis ~ 
+                    text_detection.average_text2frame_ratio +
+                    text_detection.average_text_frames, data=train, method = 'class')
+rpart.plot(tree_text)
+
+
+tree_shot = rpart(quartis ~ 
+                    shot_detection.average_shot_length + 
+                    shot_detection.shots_count + 
+                    shot_detection.transition_histogram_0 + 
+                    shot_detection.transition_histogram_1, data=train, method = 'class')
+
+rpart.plot(tree_shot)
+
+
+tree_other = rpart(quartis ~ 
+                     other.average_movie_speed +
+                     other.clutter_metric +
+                     rigidity.average_rigidity, data=train, method = 'class')
+
+rpart.plot(tree_other)
+
+```
+
+###Árvores de decisão para variável resposta "está no quarto quartil".
+
+```{r decision-tree-4-quartil}
+
+tree_general_4 = rpart(quartil_4 ~ 
+                     general.duration +
+                     general.fps +
+                     general.frame_count +
+                     general.frame_size.height, data=train, method = 'class')
+rpart.plot(tree_general_4)
+
+tree_color_4 = rpart(quartil_4 ~ 
+                     dominant_color.histogram_0 +
+                     dominant_color.histogram_1 +
+                     dominant_color.histogram_2 +
+                     dominant_color.histogram_3 +
+                     dominant_color.histogram_4 +
+                     dominant_color.histogram_5 +
+                     dominant_color.histogram_6 +
+                     dominant_color.histogram_7 +
+                     dominant_color.histogram_8 +
+                     dominant_color.histogram_9 +
+                     dominant_color.value, data=train, method = 'class')
+rpart.plot(tree_color_4)
+
+tree_face_4 = rpart(quartil_4 ~ 
+                    face_detection.average_face2frame_ratio + 
+                    face_detection.average_face_count_per_frame + 
+                    face_detection.average_face_present, data=train, method = 'class')
+
+rpart.plot(tree_face_4)
+
+tree_text_4 = rpart(quartil_4 ~ 
+                    text_detection.average_text2frame_ratio +
+                    text_detection.average_text_frames, data=train, method = 'class')
+rpart.plot(tree_text_4)
+
+
+tree_shot_4 = rpart(quartil_4 ~ 
+                    shot_detection.average_shot_length + 
+                    shot_detection.shots_count + 
+                    shot_detection.transition_histogram_0 + 
+                    shot_detection.transition_histogram_1, data=train, method = 'class')
+rpart.plot(tree_shot_4)
+
+
+tree_other_4 = rpart(quartil_4 ~ 
+                     other.average_movie_speed +
+                     other.clutter_metric +
+                     rigidity.average_rigidity, data=train, method = 'class')
+rpart.plot(tree_other_4)
+
+```
+
+###Árvores de decisão para variável resposta "maior que 1 milhão de views".
+
+```{r decision-tree-maior-1m}
+
+tree_general_1m = rpart(maior_1m ~ 
+                     general.duration +
+                     general.fps +
+                     general.frame_count +
+                     general.frame_size.height, data=train, method = 'class')
+rpart.plot(tree_general_1m)
+
+tree_color_1m = rpart(maior_1m ~ 
+                     dominant_color.histogram_0 +
+                     dominant_color.histogram_1 +
+                     dominant_color.histogram_2 +
+                     dominant_color.histogram_3 +
+                     dominant_color.histogram_4 +
+                     dominant_color.histogram_5 +
+                     dominant_color.histogram_6 +
+                     dominant_color.histogram_7 +
+                     dominant_color.histogram_8 +
+                     dominant_color.histogram_9 +
+                     dominant_color.value, data=train, method = 'class')
+rpart.plot(tree_color_1m)
+
+tree_face_1m = rpart(maior_1m ~ 
+                    face_detection.average_face2frame_ratio + 
+                    face_detection.average_face_count_per_frame + 
+                    face_detection.average_face_present, data=train, method = 'class')
+rpart.plot(tree_face_1m)
+
+tree_text_1m = rpart(maior_1m ~ 
+                    text_detection.average_text2frame_ratio +
+                    text_detection.average_text_frames, data=train, method = 'class')
+rpart.plot(tree_text_1m)
+
+
+tree_shot_1m = rpart(maior_1m ~ 
+                    shot_detection.average_shot_length + 
+                    shot_detection.shots_count + 
+                    shot_detection.transition_histogram_0 + 
+                    shot_detection.transition_histogram_1, data=train, method = 'class')
+rpart.plot(tree_shot_1m)
+
+
+tree_other_1m = rpart(maior_1m ~ 
+                     other.average_movie_speed +
+                     other.clutter_metric +
+                     rigidity.average_rigidity, data=train, method = 'class')
+rpart.plot(tree_other_1m)
+
+```
+
+# Random Forest
+
+###Testando com a variável resposta "quartis", conde cada quartil é uma categoria.
+
+```{r random-forests-quartis}
+# Create a Random Forest model with default parameters
+model_default_quartis <- randomForest(quartis ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height+
+                         dominant_color.histogram_0 +
+                         dominant_color.histogram_1 +
+                         dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         dominant_color.histogram_4 +
+                         dominant_color.histogram_5 +
+                         dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         dominant_color.histogram_8 +
+                         dominant_color.histogram_9 +
+                         dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present+
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames+
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count + 
+                         shot_detection.transition_histogram_0 + 
+                         shot_detection.transition_histogram_1+
+                         other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity, data = train, importance = TRUE)
+model_default_quartis
+
+# To check important variables
+importance(model_default_quartis)        
+varImpPlot(model_default_quartis)
+
+# Predicting on train set
+predTrain_quartis <- predict(model_default_quartis, train, type = "class")
+# Checking classification accuracy
+table(predTrain_quartis, train$quartis)  
+
+
+# Predicting on test set
+predValid_quartis <- predict(model_default_quartis, test, type = "class")
+# Checking classification accuracy
+table(predValid_quartis, test$quartis)
+mean(predValid_quartis == test$quartis)
+```
+
+###Testando com a variável resposta "estar no quarto quartil".
+
+```{r random-forests-quartil4}
+# Create a Random Forest model with default parameters
+model_default_quartil4 <- randomForest(quartil_4 ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height+
+                         dominant_color.histogram_0 +
+                         dominant_color.histogram_1 +
+                         dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         dominant_color.histogram_4 +
+                         dominant_color.histogram_5 +
+                         dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         dominant_color.histogram_8 +
+                         dominant_color.histogram_9 +
+                         dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present+
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames+
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count + 
+                         shot_detection.transition_histogram_0 + 
+                         shot_detection.transition_histogram_1+
+                         other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity, data = train, importance = TRUE)
+model_default_quartil4
+
+# To check important variables
+importance(model_default_quartil4)        
+varImpPlot(model_default_quartil4)
+
+# Predicting on train set
+predTrain_quartil4 <- predict(model_default_quartil4, train, type = "class")
+# Checking classification accuracy
+table(predTrain_quartil4, train$quartil_4)
+
+
+# Predicting on test set
+predValid_quartil4 <- predict(model_default_quartil4, test, type = "class")
+# Checking classification accuracy
+table(predValid_quartil4, test$quartil_4)  
+mean(predValid_quartil4 == test$quartil_4)
+```
+
+###Testando com a variável resposta sendo "mais de 1 milhão de views".
+
+```{r random-forests-maior1m}
+# Create a Random Forest model with default parameters
+model_default_maior1m <- randomForest(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height+
+                         dominant_color.histogram_0 +
+                         dominant_color.histogram_1 +
+                         dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         dominant_color.histogram_4 +
+                         dominant_color.histogram_5 +
+                         dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         dominant_color.histogram_8 +
+                         dominant_color.histogram_9 +
+                         dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present+
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames+
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count + 
+                         shot_detection.transition_histogram_0 + 
+                         shot_detection.transition_histogram_1+
+                         other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity, data = train, importance = TRUE)
+model_default_maior1m
+
+# To check important variables
+importance(model_default_maior1m)        
+varImpPlot(model_default_maior1m)
+
+# Predicting on train set
+predTrain_maior1m <- predict(model_default_maior1m, train, type = "class")
+# Checking classification accuracy
+table(predTrain_maior1m, train$maior_1m)
+
+
+# Predicting on test set
+predValid_maior1m <- predict(model_default_maior1m, test, type = "class")
+# Checking classification accuracy
+table(predValid_maior1m, test$maior_1m)  
+mean(predValid_maior1m == test$maior_1m)
+```
+
+## Variable selection
+
+A princípio, o modelo default que mais se saiu bem foi o que utiliza a variável resposta como sendo o vídeo ter mais de 1 milhão de views.
+
+Abaixo o teste fazendo uma seleção manual de variáveis.
+
+```{r random-forests-testing}
+
+# Create a Random Forest model with default parameters
+model_testing <- randomForest(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height+
+                         # dominant_color.histogram_0 +
+                         # dominant_color.histogram_1 +
+                         dominant_color.histogram_2 +
+                         # dominant_color.histogram_3 +
+                         # dominant_color.histogram_4 +
+                         # dominant_color.histogram_5 +
+                         # dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         # dominant_color.histogram_8 +
+                         # dominant_color.histogram_9 +
+                         dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present+
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames+
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         # shot_detection.transition_histogram_0 + 
+                         # shot_detection.transition_histogram_1 +
+                         # other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity, data = train, 
+                         importance = TRUE, mtry = 6)
+model_testing
+
+# To check important variables
+importance(model_testing)
+varImpPlot(model_testing)
+
+# Predicting on train set
+predTrain_testing <- predict(model_testing, train, type = "class")
+# Checking classification accuracy
+table(predTrain_testing, train$maior_1m)
+
+
+# Predicting on test set
+predValid_testing <- predict(model_testing, test, type = "class")
+# Checking classification accuracy
+table(predValid_testing, test$maior_1m)  
+mean(predValid_testing == test$maior_1m)
+```
+
+## Cross validation
+
+Agora, tunando o parâmetro mtry da Random Forest e utilizando croos validation com k = 5 folders.
+
+```{r cross-validation}
+
+# 5 folds
+tr <- trainControl(method = "cv", number = 5)
+
+model_crossvalidation <- train(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height +
+                         # dominant_color.histogram_0 +
+                         # dominant_color.histogram_1 +
+                         # dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         # dominant_color.histogram_4 +
+                         # dominant_color.histogram_5 +
+                         # dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         # dominant_color.histogram_8 +
+                         # dominant_color.histogram_9 +
+                         # dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present +
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames +
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         # shot_detection.transition_histogram_0 + 
+                         # shot_detection.transition_histogram_1 +
+                         # other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity,
+                         data = train, method = "rf", trControl = tr)
+
+model_crossvalidation
+
+
+# To check important variables
+importance(model_crossvalidation$finalModel)
+varImpPlot(model_crossvalidation$finalModel)
+
+# Predicting on train set
+predTrain_crossvalidation <- predict(model_crossvalidation$finalModel, train, type = "class")
+# Checking classification accuracy
+table(predTrain_crossvalidation, train$maior_1m)
+
+
+# Predicting on test set
+predValid_crossvalidation <- predict(model_crossvalidation$finalModel, test, type = "class")
+# Checking classification accuracy
+table(predValid_crossvalidation, test$maior_1m)  
+mean(predValid_crossvalidation == test$maior_1m)
+
+# # AUC - ROC
+# 
+# pred <- prediction(predValid_crossvalidation, test$maior_1m)
+# perf <- performance(pred, "auc")
+# plot(perf,colorize=TRUE)
+
+```
+
+# Paper technique
+
+```{r paper-technique}
+
+# Support Vector Machine Radial
+model_crossvalidation_svm_radial <- train(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height +
+                         # dominant_color.histogram_0 +
+                         # dominant_color.histogram_1 +
+                         # dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         # dominant_color.histogram_4 +
+                         # dominant_color.histogram_5 +
+                         # dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         # dominant_color.histogram_8 +
+                         # dominant_color.histogram_9 +
+                         # dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present +
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames +
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         # shot_detection.transition_histogram_0 + 
+                         # shot_detection.transition_histogram_1 +
+                         # other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity,
+                         data = train, method = "svmRadial", trControl = tr)
+
+model_crossvalidation_svm_radial
+
 
 
 ```
 
-- regressão (qual técnica?)
+# Other models
+
+Ajustando outros modelos de machine larning para comparação.
+
+```{r cross-validation-outros}
+# XGBoost
+model_crossvalidation_xgb <- train(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height +
+                         # dominant_color.histogram_0 +
+                         # dominant_color.histogram_1 +
+                         # dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         # dominant_color.histogram_4 +
+                         # dominant_color.histogram_5 +
+                         # dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         # dominant_color.histogram_8 +
+                         # dominant_color.histogram_9 +
+                         # dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present +
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames +
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         # shot_detection.transition_histogram_0 + 
+                         # shot_detection.transition_histogram_1 +
+                         # other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity,
+                         data = train, method = "xgbTree", trControl = tr)
+
+model_crossvalidation_xgb
+
+# Support Vector Machine Linear
+model_crossvalidation_svm <- train(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height +
+                         # dominant_color.histogram_0 +
+                         # dominant_color.histogram_1 +
+                         # dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         # dominant_color.histogram_4 +
+                         # dominant_color.histogram_5 +
+                         # dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         # dominant_color.histogram_8 +
+                         # dominant_color.histogram_9 +
+                         # dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present +
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames +
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         # shot_detection.transition_histogram_0 + 
+                         # shot_detection.transition_histogram_1 +
+                         # other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity,
+                         data = train, method = "svmLinearWeights2", trControl = tr)
+
+model_crossvalidation_svm
+
+# Tree Bag
+model_crossvalidation_treebag <- train(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height +
+                         # dominant_color.histogram_0 +
+                         # dominant_color.histogram_1 +
+                         # dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         # dominant_color.histogram_4 +
+                         # dominant_color.histogram_5 +
+                         # dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         # dominant_color.histogram_8 +
+                         # dominant_color.histogram_9 +
+                         # dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present +
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames +
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         # shot_detection.transition_histogram_0 + 
+                         # shot_detection.transition_histogram_1 +
+                         # other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity,
+                         data = train, method = "treebag", trControl = tr)
+
+model_crossvalidation_treebag
+```
+
+
+
+# Rascunho:
+
+### Links R:
+
+Modelagem:
+http://www.est.ufmg.br/portal/arquivos/rts/RT-SE-2009.pdf
+
+Random Forest:
+https://www.r-bloggers.com/how-to-implement-random-forests-in-r/
+
+PCA:
+http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/118-principal-component-analysis-in-r-prcomp-vs-princomp/
