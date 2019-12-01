@@ -8,7 +8,7 @@ output:
 
 
 
-## Initial exploratory data analysis
+# Initial exploratory data analysis
 
 In this project we use a dataset containing visual and temporal features from 1820 videos uploaded to facebook between August 1st, 2015 until October 15th, 2015 collected by Trzci´nski and Rokita and the data are available in <http://ii.pw.edu.pl/~ttrzcins/facebook_dataset_2015.csv>.
 
@@ -18,20 +18,25 @@ Our focus is on analysing the visual features, looking for some clue about the r
 
 ```r
 # Reading original data
-facebook_data <- read_csv("../data/raw/facebook_dataset_2015.csv") %>% as_tibble()
+facebook_data <- read_rds("../data/raw/facebook_dataset.rds")
+
+# Reading original data splitted in visual and temporal features
+visual_features <- read_rds("../data/processed/visual_features.rds")
+temporal_features <- read_rds("../data/processed/temporal_features.rds")
+
+# Reading temporal features data in long format
+temporal_features_long <- read_rds("../data/processed/temporal_features_long.rds")
+
+# Reading the final dataset: all visual features and the target feature
+visual_96 <- read_rds("../data/processed/visual_features_96h.rds")
 ```
 
 
-```r
-# Split visual and temporal features
-visual_features <- select(facebook_data, facebook_post_id:title.sentiment) %>% as_tibble()
-temporal_features <- select(facebook_data, facebook_post_id, views.1:likes.168) %>% as_tibble()
-```
+## Exploring data
 
+### Visual Features
 
-- EXPLORAÇÃO DO DATA SET---------------------------------------------------------------------
-
-# Visual features
+Exploring visual features from dataset.
 
 
 ```r
@@ -41,19 +46,19 @@ glimpse(visual_features)
 
 ```
 ## Observations: 1,820
-## Variables: 30
+## Variables: 29
 ## $ facebook_post_id                            <chr> "407570359384477_6...
-## $ `dominant_color.histogram[0]`               <dbl> 0.002329916, 0.005...
-## $ `dominant_color.histogram[1]`               <dbl> 0.28518173, 0.4632...
-## $ `dominant_color.histogram[2]`               <dbl> 0.321528425, 0.059...
-## $ `dominant_color.histogram[3]`               <dbl> 0.19105312, 0.1924...
-## $ `dominant_color.histogram[4]`               <dbl> 0.000000000, 0.000...
-## $ `dominant_color.histogram[5]`               <dbl> 0.000000000, 0.000...
-## $ `dominant_color.histogram[6]`               <dbl> 0.00000000, 0.0000...
-## $ `dominant_color.histogram[7]`               <dbl> 0.007921715, 0.093...
-## $ `dominant_color.histogram[8]`               <dbl> 0.093196645, 0.157...
-## $ `dominant_color.histogram[9]`               <dbl> 0.098788444, 0.027...
-## $ dominant_color.value                        <dbl> 2, 1, 1, 1, 2, 3, ...
+## $ dominant_color.histogram_0                  <dbl> 0.002329916, 0.005...
+## $ dominant_color.histogram_1                  <dbl> 0.28518173, 0.4632...
+## $ dominant_color.histogram_2                  <dbl> 0.321528425, 0.059...
+## $ dominant_color.histogram_3                  <dbl> 0.19105312, 0.1924...
+## $ dominant_color.histogram_4                  <dbl> 0.000000000, 0.000...
+## $ dominant_color.histogram_5                  <dbl> 0.000000000, 0.000...
+## $ dominant_color.histogram_6                  <dbl> 0.00000000, 0.0000...
+## $ dominant_color.histogram_7                  <dbl> 0.007921715, 0.093...
+## $ dominant_color.histogram_8                  <dbl> 0.093196645, 0.157...
+## $ dominant_color.histogram_9                  <dbl> 0.098788444, 0.027...
+## $ dominant_color.value                        <fct> 2, 1, 1, 1, 2, 3, ...
 ## $ face_detection.average_face2frame_ratio     <dbl> 0.015107821, 0.009...
 ## $ face_detection.average_face_count_per_frame <dbl> 0.25116496, 0.3046...
 ## $ face_detection.average_face_present         <dbl> 0.24324324, 0.0987...
@@ -67,46 +72,19 @@ glimpse(visual_features)
 ## $ rigidity.average_rigidity                   <dbl> 0.2129543, 0.27088...
 ## $ shot_detection.average_shot_length          <dbl> 4.517895, 3.950000...
 ## $ shot_detection.shots_count                  <dbl> 19, 12, 12, 23, 16...
-## $ `shot_detection.transition_histogram[0]`    <dbl> 1.0000000, 0.83333...
-## $ `shot_detection.transition_histogram[1]`    <dbl> 0.00000000, 0.1666...
+## $ shot_detection.transition_histogram_0       <dbl> 1.0000000, 0.83333...
+## $ shot_detection.transition_histogram_1       <dbl> 0.00000000, 0.1666...
 ## $ text_detection.average_text2frame_ratio     <dbl> 0.054040548, 0.052...
 ## $ text_detection.average_text_frames          <dbl> 0.4464119, 0.45147...
-## $ title.sentiment                             <dbl> 4.651, 4.566, 3.72...
-```
-
-```r
-# Ajusting data
-visual_features <- visual_features %>%
-  # ajusting type of feature
-  mutate(
-    dominant_color.value = as.factor(dominant_color.value)
-  ) %>%
-  # rename features
-  rename(
-    dominant_color.histogram_0 = `dominant_color.histogram[0]`,
-    dominant_color.histogram_1 = `dominant_color.histogram[1]`,
-    dominant_color.histogram_2 = `dominant_color.histogram[2]`,
-    dominant_color.histogram_3 = `dominant_color.histogram[3]`,
-    dominant_color.histogram_4 = `dominant_color.histogram[4]`,
-    dominant_color.histogram_5 = `dominant_color.histogram[5]`,
-    dominant_color.histogram_6 = `dominant_color.histogram[6]`,
-    dominant_color.histogram_7 = `dominant_color.histogram[7]`,
-    dominant_color.histogram_8 = `dominant_color.histogram[8]`,
-    dominant_color.histogram_9 = `dominant_color.histogram[9]`,
-    shot_detection.transition_histogram_0 = `shot_detection.transition_histogram[0]`,
-    shot_detection.transition_histogram_1 = `shot_detection.transition_histogram[1]` 
-  ) %>%
-  # remove nonvisual feature
-  select(-title.sentiment)
 ```
 
 
-#--------------------------------------------------
-# Gráficos explorando as features aqui!
+( Gráficos explorando as features aqui! ) ?
 
 
 
 ```r
+# Summary tables
 visual_features %>% select(-facebook_post_id) %>% summary_table(.)
 ```
 
@@ -261,18 +239,9 @@ visual_features %>% select(-facebook_post_id) %>% summary_table(.)
 |&nbsp;&nbsp; mean (sd)                          |0.43 &plusmn; 0.30            |
 |&nbsp;&nbsp; maximum                            |1.00                          |
 
+### Temporal/social features
 
-
-
-
-```r
-# Reshape temporal features to analize
-temporal_features %>%
-  gather(feature, value, views.1:likes.168, factor_key=TRUE) %>%
-  separate(feature, c("feature", "time"), "[.]") -> temporal_features_long
-```
-
-## Choosing the model target
+Choosing the model target.
 
 
 ```r
@@ -294,14 +263,6 @@ temporal_features_long %>%
 
 ![](predicting-number-of-views_files/figure-html/choosing-time-1.png)<!-- -->
 
-## Exploring distribution of views in 96h
-
-
-```r
-visual_features %>%
-  left_join(temporal_features %>% select(facebook_post_id, views_96 = views.96),
-            by = "facebook_post_id") -> visual_96
-```
 
 
 ```r
@@ -313,9 +274,7 @@ visual_96 %>%
 ![](predicting-number-of-views_files/figure-html/response-distribution-1.png)<!-- -->
 
 
-# FEATURE SELECTION
-
-# Exploring correlation with predictor features
+### Exploring correlation with predictor features
 
 
 ```r
@@ -1600,8 +1559,9 @@ cor(visual_96 %>% select(-facebook_post_id,-dominant_color.value))
 ## views_96                                     1.0000000000
 ```
 
+# Initial modeling
 
-# Linear models
+## Linear models
 
 
 ```r
@@ -2933,7 +2893,7 @@ lm(visual_96$views_96 ~ -1 +
 ```
 
 
-## Categorizing the target
+# Categorizing the target
 
 
 ```r
@@ -2946,7 +2906,7 @@ visual_resp <- visual_96 %>%
   )
 ```
 
-## Split dataset 
+# Split dataset 
 
 
 ```r
@@ -2956,7 +2916,7 @@ test  <- anti_join(visual_resp, train, by = 'facebook_post_id')
 
 # Decision trees
 
-###Árvores de decisão para variável resposta "quartil" onde cada quartil é uma categoria.
+### Árvores de decisão para variável resposta "quartil" onde cada quartil é uma categoria.
 
 
 ```r
@@ -3031,7 +2991,7 @@ rpart.plot(tree_other)
 
 ![](predicting-number-of-views_files/figure-html/decision-tree-quartis-6.png)<!-- -->
 
-###Árvores de decisão para variável resposta "está no quarto quartil".
+### Árvores de decisão para variável resposta "está no quarto quartil".
 
 
 ```r
@@ -3104,7 +3064,7 @@ rpart.plot(tree_other_4)
 
 ![](predicting-number-of-views_files/figure-html/decision-tree-4-quartil-6.png)<!-- -->
 
-###Árvores de decisão para variável resposta "maior que 1 milhão de views".
+### Árvores de decisão para variável resposta "maior que 1 milhão de views".
 
 
 ```r
@@ -3176,7 +3136,9 @@ rpart.plot(tree_other_1m)
 
 ![](predicting-number-of-views_files/figure-html/decision-tree-maior-1m-6.png)<!-- -->
 
-# Random Forest
+# Modeling
+
+## Random Forest
 
 ###Testando com a variável resposta "quartis", conde cada quartil é uma categoria.
 
@@ -3767,7 +3729,7 @@ mean(predValid_maior1m == test$maior_1m)
 ## [1] 0.9029304
 ```
 
-## Variable selection
+### Variable selection
 
 A princípio, o modelo default que mais se saiu bem foi o que utiliza a variável resposta como sendo o vídeo ter mais de 1 milhão de views.
 
@@ -4061,7 +4023,7 @@ mean(predValid_crossvalidation == test$maior_1m)
 # plot(perf,colorize=TRUE)
 ```
 
-# Paper technique
+### Paper technique
 
 
 ```r
@@ -4121,7 +4083,7 @@ model_crossvalidation_svm_radial
 ## The final values used for the model were sigma = 0.06771895 and C = 1.
 ```
 
-# Other models
+### Other models
 
 Ajustando outros modelos de machine larning para comparação.
 
@@ -4528,7 +4490,7 @@ model_crossvalidation_treebag
 
 # Rascunho:
 
-### Links R:
+## Links R:
 
 Modelagem:
 http://www.est.ufmg.br/portal/arquivos/rts/RT-SE-2009.pdf
