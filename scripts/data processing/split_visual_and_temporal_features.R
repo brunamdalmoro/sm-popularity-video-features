@@ -1,7 +1,7 @@
 # Split data in two: visual features and temporal features
 library(tidyverse)
 
-facebook_data <- readRDS("../data/raw/facebook_data.rds")
+facebook_data <- readRDS("data/raw/facebook_data.rds")
 
 visual_features <- select(facebook_data, facebook_post_id:title.sentiment)
 temporal_features <- select(facebook_data, facebook_post_id, views.1:likes.168)
