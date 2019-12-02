@@ -1,8 +1,9 @@
 ---
-title: "Predicting Number of Views"
+title: "Predicting Number of Views - Exploring"
 author: "Bruna Martini Dalmoro"
 output:
   html_document:
+    code_folding: hide
     keep_md: yes
 ---
 
@@ -261,7 +262,7 @@ temporal_features_long %>%
   theme_ipsum()
 ```
 
-![](predicting-number-of-views_files/figure-html/choosing-time-1.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/choosing-time-1.png)<!-- -->
 
 
 
@@ -271,7 +272,7 @@ visual_96 %>%
   geom_boxplot()
 ```
 
-![](predicting-number-of-views_files/figure-html/response-distribution-1.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/response-distribution-1.png)<!-- -->
 
 
 ### Exploring correlation with predictor features
@@ -2902,7 +2903,10 @@ visual_resp <- visual_96 %>%
   mutate(
     quartis = ntile(visual_96$views_96,4) %>% as.factor(),
     quartil_4 = ifelse(quartis == 4, 1, 0) %>% as.factor(),
-    maior_1m = ifelse(views_96 >= 1000000, 1, 0) %>% as.factor()
+    maior_1m = ifelse(views_96 >= 1000000, 1, 0) %>% as.factor(),
+    maior_500k = ifelse(views_96 >= 500000, 1, 0) %>% as.factor(),
+    tres_partes = ifelse(views_96 >= 1000000, "> 1m", 
+                         ifelse(views_96 < 1000000 & views_96 >= 500000, "> 500k", "Menor")) %>% as.factor()
   )
 ```
 
@@ -2928,7 +2932,7 @@ tree_general = rpart(quartis ~ -1 +
 rpart.plot(tree_general)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-quartis-1.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-quartis-1.png)<!-- -->
 
 ```r
 tree_color = rpart(quartis ~ 
@@ -2946,7 +2950,7 @@ tree_color = rpart(quartis ~
 rpart.plot(tree_color)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-quartis-2.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-quartis-2.png)<!-- -->
 
 ```r
 tree_face = rpart(quartis ~ 
@@ -2957,7 +2961,7 @@ tree_face = rpart(quartis ~
 rpart.plot(tree_face)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-quartis-3.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-quartis-3.png)<!-- -->
 
 ```r
 tree_text = rpart(quartis ~ 
@@ -2966,7 +2970,7 @@ tree_text = rpart(quartis ~
 rpart.plot(tree_text)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-quartis-4.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-quartis-4.png)<!-- -->
 
 ```r
 tree_shot = rpart(quartis ~ 
@@ -2978,7 +2982,7 @@ tree_shot = rpart(quartis ~
 rpart.plot(tree_shot)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-quartis-5.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-quartis-5.png)<!-- -->
 
 ```r
 tree_other = rpart(quartis ~ 
@@ -2989,7 +2993,7 @@ tree_other = rpart(quartis ~
 rpart.plot(tree_other)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-quartis-6.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-quartis-6.png)<!-- -->
 
 ### Árvores de decisão para variável resposta "está no quarto quartil".
 
@@ -3003,7 +3007,7 @@ tree_general_4 = rpart(quartil_4 ~
 rpart.plot(tree_general_4)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-4-quartil-1.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-4-quartil-1.png)<!-- -->
 
 ```r
 tree_color_4 = rpart(quartil_4 ~ 
@@ -3021,7 +3025,7 @@ tree_color_4 = rpart(quartil_4 ~
 rpart.plot(tree_color_4)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-4-quartil-2.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-4-quartil-2.png)<!-- -->
 
 ```r
 tree_face_4 = rpart(quartil_4 ~ 
@@ -3032,7 +3036,7 @@ tree_face_4 = rpart(quartil_4 ~
 rpart.plot(tree_face_4)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-4-quartil-3.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-4-quartil-3.png)<!-- -->
 
 ```r
 tree_text_4 = rpart(quartil_4 ~ 
@@ -3041,7 +3045,7 @@ tree_text_4 = rpart(quartil_4 ~
 rpart.plot(tree_text_4)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-4-quartil-4.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-4-quartil-4.png)<!-- -->
 
 ```r
 tree_shot_4 = rpart(quartil_4 ~ 
@@ -3052,7 +3056,7 @@ tree_shot_4 = rpart(quartil_4 ~
 rpart.plot(tree_shot_4)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-4-quartil-5.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-4-quartil-5.png)<!-- -->
 
 ```r
 tree_other_4 = rpart(quartil_4 ~ 
@@ -3062,7 +3066,7 @@ tree_other_4 = rpart(quartil_4 ~
 rpart.plot(tree_other_4)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-4-quartil-6.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-4-quartil-6.png)<!-- -->
 
 ### Árvores de decisão para variável resposta "maior que 1 milhão de views".
 
@@ -3076,7 +3080,7 @@ tree_general_1m = rpart(maior_1m ~
 rpart.plot(tree_general_1m)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-maior-1m-1.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-maior-1m-1.png)<!-- -->
 
 ```r
 tree_color_1m = rpart(maior_1m ~ 
@@ -3094,7 +3098,7 @@ tree_color_1m = rpart(maior_1m ~
 rpart.plot(tree_color_1m)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-maior-1m-2.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-maior-1m-2.png)<!-- -->
 
 ```r
 tree_face_1m = rpart(maior_1m ~ 
@@ -3104,7 +3108,7 @@ tree_face_1m = rpart(maior_1m ~
 rpart.plot(tree_face_1m)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-maior-1m-3.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-maior-1m-3.png)<!-- -->
 
 ```r
 tree_text_1m = rpart(maior_1m ~ 
@@ -3113,7 +3117,7 @@ tree_text_1m = rpart(maior_1m ~
 rpart.plot(tree_text_1m)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-maior-1m-4.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-maior-1m-4.png)<!-- -->
 
 ```r
 tree_shot_1m = rpart(maior_1m ~ 
@@ -3124,7 +3128,7 @@ tree_shot_1m = rpart(maior_1m ~
 rpart.plot(tree_shot_1m)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-maior-1m-5.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-maior-1m-5.png)<!-- -->
 
 ```r
 tree_other_1m = rpart(maior_1m ~ 
@@ -3134,13 +3138,13 @@ tree_other_1m = rpart(maior_1m ~
 rpart.plot(tree_other_1m)
 ```
 
-![](predicting-number-of-views_files/figure-html/decision-tree-maior-1m-6.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/decision-tree-maior-1m-6.png)<!-- -->
 
 # Modeling
 
 ## Random Forest
 
-###Testando com a variável resposta "quartis", conde cada quartil é uma categoria.
+### Testando com a variável resposta "quartis", conde cada quartil é uma categoria.
 
 
 ```r
@@ -3317,7 +3321,7 @@ importance(model_default_quartis)
 varImpPlot(model_default_quartis)
 ```
 
-![](predicting-number-of-views_files/figure-html/random-forests-quartis-1.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/random-forests-quartis-1.png)<!-- -->
 
 ```r
 # Predicting on train set
@@ -3359,7 +3363,7 @@ mean(predValid_quartis == test$quartis)
 ## [1] 0.5549451
 ```
 
-###Testando com a variável resposta "estar no quarto quartil".
+### Testando com a variável resposta "estar no quarto quartil".
 
 
 ```r
@@ -3506,7 +3510,7 @@ importance(model_default_quartil4)
 varImpPlot(model_default_quartil4)
 ```
 
-![](predicting-number-of-views_files/figure-html/random-forests-quartil4-1.png)<!-- -->
+![](exploring-data-and-models_files/figure-html/random-forests-quartil4-1.png)<!-- -->
 
 ```r
 # Predicting on train set
@@ -3544,12 +3548,12 @@ mean(predValid_quartil4 == test$quartil_4)
 ## [1] 0.8388278
 ```
 
-###Testando com a variável resposta sendo "mais de 1 milhão de views".
+### Testando com a variável resposta sendo "mais de 500 mil views".
 
 
 ```r
 # Create a Random Forest model with default parameters
-model_default_maior1m <- randomForest(maior_1m ~ 
+model_random_forest <- randomForest(maior_500k ~ 
                          general.duration +
                          general.fps +
                          general.frame_count +
@@ -3577,157 +3581,41 @@ model_default_maior1m <- randomForest(maior_1m ~
                          other.average_movie_speed +
                          other.clutter_metric +
                          rigidity.average_rigidity, data = train, importance = TRUE)
-model_default_maior1m
-```
+# model_random_forest
+# 
+# # To check important variables
+# importance(model_random_forest)      
+# varImpPlot(model_random_forest)
 
-```
-## 
-## Call:
-##  randomForest(formula = maior_1m ~ general.duration + general.fps +      general.frame_count + general.frame_size.height + dominant_color.histogram_0 +      dominant_color.histogram_1 + dominant_color.histogram_2 +      dominant_color.histogram_3 + dominant_color.histogram_4 +      dominant_color.histogram_5 + dominant_color.histogram_6 +      dominant_color.histogram_7 + dominant_color.histogram_8 +      dominant_color.histogram_9 + dominant_color.value + face_detection.average_face2frame_ratio +      face_detection.average_face_count_per_frame + face_detection.average_face_present +      text_detection.average_text2frame_ratio + text_detection.average_text_frames +      shot_detection.average_shot_length + shot_detection.shots_count +      shot_detection.transition_histogram_0 + shot_detection.transition_histogram_1 +      other.average_movie_speed + other.clutter_metric + rigidity.average_rigidity,      data = train, importance = TRUE) 
-##                Type of random forest: classification
-##                      Number of trees: 500
-## No. of variables tried at each split: 5
-## 
-##         OOB estimate of  error rate: 9.65%
-## Confusion matrix:
-##      0  1 class.error
-## 0 1062 28  0.02568807
-## 1   95 89  0.51630435
-```
-
-```r
-# To check important variables
-importance(model_default_maior1m)        
-```
-
-```
-##                                                       0         1
-## general.duration                            16.63762453  2.393498
-## general.fps                                 22.33350567 33.608601
-## general.frame_count                         15.41544877  3.244606
-## general.frame_size.height                   10.80705035  8.492623
-## dominant_color.histogram_0                   0.46331514  2.007785
-## dominant_color.histogram_1                   7.76171950  2.123646
-## dominant_color.histogram_2                  11.57676838 -1.727166
-## dominant_color.histogram_3                   4.71448569  5.453129
-## dominant_color.histogram_4                   0.88327261  1.276287
-## dominant_color.histogram_5                  -0.07271794  1.063283
-## dominant_color.histogram_6                  -2.36717829  3.360594
-## dominant_color.histogram_7                   9.62273962  1.902620
-## dominant_color.histogram_8                   5.41780861  5.078713
-## dominant_color.histogram_9                   8.50226882 -1.907547
-## dominant_color.value                         7.16751818  1.164051
-## face_detection.average_face2frame_ratio      9.65666589  3.752938
-## face_detection.average_face_count_per_frame 11.98425347  2.437229
-## face_detection.average_face_present         11.10056654  1.224140
-## text_detection.average_text2frame_ratio     14.24226765  6.955766
-## text_detection.average_text_frames          12.72149348 10.235085
-## shot_detection.average_shot_length          11.54251213  5.415562
-## shot_detection.shots_count                  11.13040610  6.492607
-## shot_detection.transition_histogram_0        6.48135675 -1.031746
-## shot_detection.transition_histogram_1        6.29769849 -2.071923
-## other.average_movie_speed                    5.66441710  4.603941
-## other.clutter_metric                        11.42596093  2.053538
-## rigidity.average_rigidity                    8.51325671 18.896367
-##                                             MeanDecreaseAccuracy
-## general.duration                                      17.9817095
-## general.fps                                           36.3210527
-## general.frame_count                                   16.7406019
-## general.frame_size.height                             12.3007592
-## dominant_color.histogram_0                             1.5445848
-## dominant_color.histogram_1                             8.3849112
-## dominant_color.histogram_2                            10.4914358
-## dominant_color.histogram_3                             6.9347850
-## dominant_color.histogram_4                             1.4668949
-## dominant_color.histogram_5                             0.3676067
-## dominant_color.histogram_6                            -0.7178225
-## dominant_color.histogram_7                             9.6223889
-## dominant_color.histogram_8                             7.1981113
-## dominant_color.histogram_9                             7.5101642
-## dominant_color.value                                   7.5760160
-## face_detection.average_face2frame_ratio               10.9219877
-## face_detection.average_face_count_per_frame           13.2071931
-## face_detection.average_face_present                   12.1153519
-## text_detection.average_text2frame_ratio               16.4611014
-## text_detection.average_text_frames                    16.6983860
-## shot_detection.average_shot_length                    12.7115636
-## shot_detection.shots_count                            13.3338876
-## shot_detection.transition_histogram_0                  6.3939054
-## shot_detection.transition_histogram_1                  6.0236784
-## other.average_movie_speed                              7.1008844
-## other.clutter_metric                                  12.3301013
-## rigidity.average_rigidity                             18.8928703
-##                                             MeanDecreaseGini
-## general.duration                                   14.727558
-## general.fps                                        42.797068
-## general.frame_count                                15.167018
-## general.frame_size.height                           4.604621
-## dominant_color.histogram_0                          2.406704
-## dominant_color.histogram_1                         10.465832
-## dominant_color.histogram_2                          9.832086
-## dominant_color.histogram_3                         10.655756
-## dominant_color.histogram_4                          5.421455
-## dominant_color.histogram_5                          2.517324
-## dominant_color.histogram_6                          5.685106
-## dominant_color.histogram_7                          9.660435
-## dominant_color.histogram_8                          9.761556
-## dominant_color.histogram_9                          6.424528
-## dominant_color.value                                7.426345
-## face_detection.average_face2frame_ratio            13.473688
-## face_detection.average_face_count_per_frame        11.644764
-## face_detection.average_face_present                11.256643
-## text_detection.average_text2frame_ratio            15.894613
-## text_detection.average_text_frames                 17.188133
-## shot_detection.average_shot_length                 13.180438
-## shot_detection.shots_count                         14.148445
-## shot_detection.transition_histogram_0               4.787285
-## shot_detection.transition_histogram_1               5.042860
-## other.average_movie_speed                          12.900811
-## other.clutter_metric                               12.901676
-## rigidity.average_rigidity                          24.982441
-```
-
-```r
-varImpPlot(model_default_maior1m)
-```
-
-![](predicting-number-of-views_files/figure-html/random-forests-maior1m-1.png)<!-- -->
-
-```r
-# Predicting on train set
-predTrain_maior1m <- predict(model_default_maior1m, train, type = "class")
-# Checking classification accuracy
-table(predTrain_maior1m, train$maior_1m)
-```
-
-```
-##                  
-## predTrain_maior1m    0    1
-##                 0 1090    0
-##                 1    0  184
-```
-
-```r
 # Predicting on test set
-predValid_maior1m <- predict(model_default_maior1m, test, type = "class")
-# Checking classification accuracy
-table(predValid_maior1m, test$maior_1m)  
+test_pred_random_forest <- predict(model_random_forest, test, type = "class")
+
+# Checking classification metrics
+confusion_matrix_random_forest <- table(test_pred_random_forest, test$maior_500k)
+confusion_matrix_random_forest
 ```
 
 ```
-##                  
-## predValid_maior1m   0   1
-##                 0 456  34
-##                 1  19  37
+##                        
+## test_pred_random_forest   0   1
+##                       0 404  68
+##                       1  12  62
 ```
 
 ```r
-mean(predValid_maior1m == test$maior_1m)
+metrics(confusion_matrix_random_forest)
 ```
 
 ```
-## [1] 0.9029304
+## [1] "Accuracy: 0.85348"
 ```
+
+```
+##   precision    recall        f1
+## 0 0.9711538 0.8559322 0.9099099
+## 1 0.4769231 0.8378378 0.6078431
+```
+
 
 ### Variable selection
 
@@ -3738,7 +3626,7 @@ Abaixo o teste fazendo uma seleção manual de variáveis.
 
 ```r
 # Create a Random Forest model with default parameters
-model_testing <- randomForest(maior_1m ~ 
+model_rf_selection <- randomForest(maior_500k ~ 
                          general.duration +
                          general.fps +
                          general.frame_count +
@@ -3767,123 +3655,39 @@ model_testing <- randomForest(maior_1m ~
                          other.clutter_metric +
                          rigidity.average_rigidity, data = train, 
                          importance = TRUE, mtry = 6)
-model_testing
-```
+# model_rf_selection
+# 
+# # To check important variables
+# importance(model_rf_selection)
+# varImpPlot(model_rf_selection)
 
-```
-## 
-## Call:
-##  randomForest(formula = maior_1m ~ general.duration + general.fps +      general.frame_count + general.frame_size.height + dominant_color.histogram_2 +      dominant_color.histogram_7 + dominant_color.value + face_detection.average_face2frame_ratio +      face_detection.average_face_count_per_frame + face_detection.average_face_present +      text_detection.average_text2frame_ratio + text_detection.average_text_frames +      shot_detection.average_shot_length + shot_detection.shots_count +      other.clutter_metric + rigidity.average_rigidity, data = train,      importance = TRUE, mtry = 6) 
-##                Type of random forest: classification
-##                      Number of trees: 500
-## No. of variables tried at each split: 6
-## 
-##         OOB estimate of  error rate: 9.58%
-## Confusion matrix:
-##      0  1 class.error
-## 0 1059 31  0.02844037
-## 1   91 93  0.49456522
-```
-
-```r
-# To check important variables
-importance(model_testing)
-```
-
-```
-##                                                     0             1
-## general.duration                            17.716196  0.1162830391
-## general.fps                                 29.563637 49.2818653580
-## general.frame_count                         17.984592  1.1700703968
-## general.frame_size.height                   17.471358 11.5971835794
-## dominant_color.histogram_2                  13.092467 -3.7768353716
-## dominant_color.histogram_7                   9.720431  1.2498522448
-## dominant_color.value                         9.317871  0.0009646335
-## face_detection.average_face2frame_ratio     14.833377  3.4560892714
-## face_detection.average_face_count_per_frame 15.108304  1.0596378281
-## face_detection.average_face_present         16.862518  2.1486313089
-## text_detection.average_text2frame_ratio     14.568617  6.9052292352
-## text_detection.average_text_frames          14.312517 10.2823706074
-## shot_detection.average_shot_length          12.114440  6.3751926852
-## shot_detection.shots_count                  13.471576  7.7938767935
-## other.clutter_metric                        16.350110  2.6840823747
-## rigidity.average_rigidity                   12.412311 17.8011866250
-##                                             MeanDecreaseAccuracy
-## general.duration                                       18.681288
-## general.fps                                            54.620451
-## general.frame_count                                    18.684621
-## general.frame_size.height                              18.984773
-## dominant_color.histogram_2                             11.535735
-## dominant_color.histogram_7                              9.486398
-## dominant_color.value                                    8.848579
-## face_detection.average_face2frame_ratio                16.280864
-## face_detection.average_face_count_per_frame            16.023883
-## face_detection.average_face_present                    18.411407
-## text_detection.average_text2frame_ratio                17.534911
-## text_detection.average_text_frames                     18.632126
-## shot_detection.average_shot_length                     13.988431
-## shot_detection.shots_count                             16.172736
-## other.clutter_metric                                   17.098562
-## rigidity.average_rigidity                              21.018939
-##                                             MeanDecreaseGini
-## general.duration                                   16.788580
-## general.fps                                        60.184937
-## general.frame_count                                17.916228
-## general.frame_size.height                           6.360103
-## dominant_color.histogram_2                         13.617630
-## dominant_color.histogram_7                         11.989106
-## dominant_color.value                               11.065530
-## face_detection.average_face2frame_ratio            20.186152
-## face_detection.average_face_count_per_frame        15.505380
-## face_detection.average_face_present                15.687292
-## text_detection.average_text2frame_ratio            19.913141
-## text_detection.average_text_frames                 21.625598
-## shot_detection.average_shot_length                 16.901990
-## shot_detection.shots_count                         14.429118
-## other.clutter_metric                               19.547388
-## rigidity.average_rigidity                          33.090766
-```
-
-```r
-varImpPlot(model_testing)
-```
-
-![](predicting-number-of-views_files/figure-html/random-forests-testing-1.png)<!-- -->
-
-```r
-# Predicting on train set
-predTrain_testing <- predict(model_testing, train, type = "class")
-# Checking classification accuracy
-table(predTrain_testing, train$maior_1m)
-```
-
-```
-##                  
-## predTrain_testing    0    1
-##                 0 1090    0
-##                 1    0  184
-```
-
-```r
 # Predicting on test set
-predValid_testing <- predict(model_testing, test, type = "class")
-# Checking classification accuracy
-table(predValid_testing, test$maior_1m)  
+test_pred_rf_selecion <- predict(model_rf_selection, test, type = "class")
+
+# Checking classification metrics
+confusion_matrix_rf_selecion <- table(test_pred_rf_selecion, test$maior_500k)
+confusion_matrix_rf_selecion
 ```
 
 ```
-##                  
-## predValid_testing   0   1
-##                 0 448  33
-##                 1  27  38
+##                      
+## test_pred_rf_selecion   0   1
+##                     0 400  69
+##                     1  16  61
 ```
 
 ```r
-mean(predValid_testing == test$maior_1m)
+metrics(confusion_matrix_rf_selecion)
 ```
 
 ```
-## [1] 0.8901099
+## [1] "Accuracy: 0.844322"
+```
+
+```
+##   precision    recall        f1
+## 0 0.9615385 0.8528785 0.9039548
+## 1 0.4692308 0.7922078 0.5893720
 ```
 
 ## Cross validation
@@ -3895,7 +3699,7 @@ Agora, tunando o parâmetro mtry da Random Forest e utilizando croos validation 
 # 5 folds
 tr <- trainControl(method = "cv", number = 5)
 
-model_crossvalidation <- train(maior_1m ~ 
+model_rf_crossvalidation <- train(maior_500k ~ 
                          general.duration +
                          general.fps +
                          general.frame_count +
@@ -3918,109 +3722,51 @@ model_crossvalidation <- train(maior_1m ~
                          text_detection.average_text_frames +
                          shot_detection.average_shot_length + 
                          shot_detection.shots_count +
-                         # shot_detection.transition_histogram_0 + 
+                         # shot_detection.transition_histogram_0 +
                          # shot_detection.transition_histogram_1 +
                          # other.average_movie_speed +
                          other.clutter_metric +
                          rigidity.average_rigidity,
                          data = train, method = "rf", trControl = tr)
 
-model_crossvalidation
+# model_rf_crossvalidation
+# 
+# 
+# # To check important variables
+# importance(model_rf_crossvalidation$finalModel)
+varImpPlot(model_rf_crossvalidation$finalModel)
 ```
 
-```
-## Random Forest 
-## 
-## 1274 samples
-##   15 predictor
-##    2 classes: '0', '1' 
-## 
-## No pre-processing
-## Resampling: Cross-Validated (5 fold) 
-## Summary of sample sizes: 1019, 1020, 1019, 1019, 1019 
-## Resampling results across tuning parameters:
-## 
-##   mtry  Accuracy   Kappa    
-##    2    0.9034430  0.5265439
-##    8    0.9057928  0.5660782
-##   15    0.9018712  0.5484911
-## 
-## Accuracy was used to select the optimal model using the largest value.
-## The final value used for the model was mtry = 8.
-```
-
-```r
-# To check important variables
-importance(model_crossvalidation$finalModel)
-```
-
-```
-##                                             MeanDecreaseGini
-## general.duration                                   16.391836
-## general.fps                                        68.374370
-## general.frame_count                                16.556012
-## general.frame_size.height                           6.998014
-## dominant_color.histogram_3                         11.461135
-## dominant_color.histogram_7                         12.894764
-## face_detection.average_face2frame_ratio            22.711194
-## face_detection.average_face_count_per_frame        14.098937
-## face_detection.average_face_present                16.917164
-## text_detection.average_text2frame_ratio            20.290233
-## text_detection.average_text_frames                 21.714337
-## shot_detection.average_shot_length                 16.586446
-## shot_detection.shots_count                         14.242436
-## other.clutter_metric                               20.531289
-## rigidity.average_rigidity                          34.202318
-```
-
-```r
-varImpPlot(model_crossvalidation$finalModel)
-```
-
-![](predicting-number-of-views_files/figure-html/cross-validation-1.png)<!-- -->
-
-```r
-# Predicting on train set
-predTrain_crossvalidation <- predict(model_crossvalidation$finalModel, train, type = "class")
-# Checking classification accuracy
-table(predTrain_crossvalidation, train$maior_1m)
-```
-
-```
-##                          
-## predTrain_crossvalidation    0    1
-##                         0 1090    0
-##                         1    0  184
-```
+![](exploring-data-and-models_files/figure-html/cross-validation-1.png)<!-- -->
 
 ```r
 # Predicting on test set
-predValid_crossvalidation <- predict(model_crossvalidation$finalModel, test, type = "class")
-# Checking classification accuracy
-table(predValid_crossvalidation, test$maior_1m)  
+test_pred_rf_crossvalidation <- predict(model_rf_crossvalidation$finalModel, test, type = "class")
+
+# Checking classification metrics
+confusion_matrix_rf_crossvalidation <- table(test_pred_rf_crossvalidation, test$maior_500k)  
+confusion_matrix_rf_crossvalidation
 ```
 
 ```
-##                          
-## predValid_crossvalidation   0   1
-##                         0 448  34
-##                         1  27  37
-```
-
-```r
-mean(predValid_crossvalidation == test$maior_1m)
-```
-
-```
-## [1] 0.8882784
+##                             
+## test_pred_rf_crossvalidation   0   1
+##                            0 406  67
+##                            1  10  63
 ```
 
 ```r
-# # AUC - ROC
-# 
-# pred <- prediction(predValid_crossvalidation, test$maior_1m)
-# perf <- performance(pred, "auc")
-# plot(perf,colorize=TRUE)
+metrics(confusion_matrix_rf_crossvalidation)
+```
+
+```
+## [1] "Accuracy: 0.858974"
+```
+
+```
+##   precision    recall        f1
+## 0 0.9759615 0.8583510 0.9133858
+## 1 0.4846154 0.8630137 0.6206897
 ```
 
 ### Paper technique
@@ -4028,7 +3774,7 @@ mean(predValid_crossvalidation == test$maior_1m)
 
 ```r
 # Support Vector Machine Radial
-model_crossvalidation_svm_radial <- train(maior_1m ~ 
+model_cv_svm_radial <- train(maior_500k ~ 
                          general.duration +
                          general.fps +
                          general.frame_count +
@@ -4058,29 +3804,59 @@ model_crossvalidation_svm_radial <- train(maior_1m ~
                          rigidity.average_rigidity,
                          data = train, method = "svmRadial", trControl = tr)
 
-model_crossvalidation_svm_radial
+# model_cv_svm_radial
+
+
+# Predicting o test set
+test_pred_svm_radial <- predict(model_cv_svm_radial, test)
+
+# Checking classification metrics
+confusion_matrix_svm_radial <- confusionMatrix(test_pred_svm_radial, test$maior_500k)
+confusion_matrix_svm_radial
 ```
 
 ```
-## Support Vector Machines with Radial Basis Function Kernel 
+## Confusion Matrix and Statistics
 ## 
-## 1274 samples
-##   15 predictor
-##    2 classes: '0', '1' 
+##           Reference
+## Prediction   0   1
+##          0 407  73
+##          1   9  57
+##                                            
+##                Accuracy : 0.8498           
+##                  95% CI : (0.817, 0.8787)  
+##     No Information Rate : 0.7619           
+##     P-Value [Acc > NIR] : 0.000000272748962
+##                                            
+##                   Kappa : 0.5017           
+##                                            
+##  Mcnemar's Test P-Value : 0.000000000003471
+##                                            
+##             Sensitivity : 0.9784           
+##             Specificity : 0.4385           
+##          Pos Pred Value : 0.8479           
+##          Neg Pred Value : 0.8636           
+##              Prevalence : 0.7619           
+##          Detection Rate : 0.7454           
+##    Detection Prevalence : 0.8791           
+##       Balanced Accuracy : 0.7084           
+##                                            
+##        'Positive' Class : 0                
 ## 
-## No pre-processing
-## Resampling: Cross-Validated (5 fold) 
-## Summary of sample sizes: 1019, 1019, 1019, 1019, 1020 
-## Resampling results across tuning parameters:
-## 
-##   C     Accuracy   Kappa    
-##   0.25  0.8744141  0.3137923
-##   0.50  0.8893222  0.4426394
-##   1.00  0.9003150  0.5315171
-## 
-## Tuning parameter 'sigma' was held constant at a value of 0.06771895
-## Accuracy was used to select the optimal model using the largest value.
-## The final values used for the model were sigma = 0.06771895 and C = 1.
+```
+
+```r
+metrics(as.matrix(confusion_matrix_svm_radial$table))
+```
+
+```
+## [1] "Accuracy: 0.849817"
+```
+
+```
+##   precision    recall        f1
+## 0 0.9783654 0.8479167 0.9084821
+## 1 0.4384615 0.8636364 0.5816327
 ```
 
 ### Other models
@@ -4089,8 +3865,8 @@ Ajustando outros modelos de machine larning para comparação.
 
 
 ```r
-# XGBoost
-model_crossvalidation_xgb <- train(maior_1m ~ 
+# Support Vector Machine Linear
+model_cv_svm_linear <- train(maior_500k ~ 
                          general.duration +
                          general.fps +
                          general.frame_count +
@@ -4118,254 +3894,418 @@ model_crossvalidation_xgb <- train(maior_1m ~
                          # other.average_movie_speed +
                          other.clutter_metric +
                          rigidity.average_rigidity,
-                         data = train, method = "xgbTree", trControl = tr)
+                         data = train, method = "svmLinear", trControl = tr)
 
-model_crossvalidation_xgb
+# model_cv_svm_linear
+
+# Predicting on test set
+test_pred_svm_linear <- predict(model_cv_svm_linear, test)
+# Checking classification metrics
+
+confusion_matrix_svm_linear <- confusionMatrix(test_pred_svm_linear, test$maior_500k)
+confusion_matrix_svm_linear
 ```
 
 ```
-## eXtreme Gradient Boosting 
+## Confusion Matrix and Statistics
 ## 
-## 1274 samples
-##   15 predictor
-##    2 classes: '0', '1' 
+##           Reference
+## Prediction   0   1
+##          0 350  54
+##          1  66  76
+##                                           
+##                Accuracy : 0.7802          
+##                  95% CI : (0.7431, 0.8143)
+##     No Information Rate : 0.7619          
+##     P-Value [Acc > NIR] : 0.1701          
+##                                           
+##                   Kappa : 0.4129          
+##                                           
+##  Mcnemar's Test P-Value : 0.3153          
+##                                           
+##             Sensitivity : 0.8413          
+##             Specificity : 0.5846          
+##          Pos Pred Value : 0.8663          
+##          Neg Pred Value : 0.5352          
+##              Prevalence : 0.7619          
+##          Detection Rate : 0.6410          
+##    Detection Prevalence : 0.7399          
+##       Balanced Accuracy : 0.7130          
+##                                           
+##        'Positive' Class : 0               
 ## 
-## No pre-processing
-## Resampling: Cross-Validated (5 fold) 
-## Summary of sample sizes: 1020, 1019, 1019, 1019, 1019 
-## Resampling results across tuning parameters:
-## 
-##   eta  max_depth  colsample_bytree  subsample  nrounds  Accuracy 
-##   0.3  1          0.6               0.50        50      0.8948186
-##   0.3  1          0.6               0.50       100      0.8854037
-##   0.3  1          0.6               0.50       150      0.8909001
-##   0.3  1          0.6               0.75        50      0.8916813
-##   0.3  1          0.6               0.75       100      0.8916813
-##   0.3  1          0.6               0.75       150      0.8901158
-##   0.3  1          0.6               1.00        50      0.8940405
-##   0.3  1          0.6               1.00       100      0.8916844
-##   0.3  1          0.6               1.00       150      0.8908970
-##   0.3  1          0.8               0.50        50      0.8869724
-##   0.3  1          0.8               0.50       100      0.8861911
-##   0.3  1          0.8               0.50       150      0.8901158
-##   0.3  1          0.8               0.75        50      0.8869693
-##   0.3  1          0.8               0.75       100      0.8877629
-##   0.3  1          0.8               0.75       150      0.8830508
-##   0.3  1          0.8               1.00        50      0.8916813
-##   0.3  1          0.8               1.00       100      0.8909001
-##   0.3  1          0.8               1.00       150      0.8916813
-##   0.3  2          0.6               0.50        50      0.8932592
-##   0.3  2          0.6               0.50       100      0.8861973
-##   0.3  2          0.6               0.50       150      0.8869816
-##   0.3  2          0.6               0.75        50      0.8908970
-##   0.3  2          0.6               0.75       100      0.8885503
-##   0.3  2          0.6               0.75       150      0.8869755
-##   0.3  2          0.6               1.00        50      0.8963872
-##   0.3  2          0.6               1.00       100      0.8901158
-##   0.3  2          0.6               1.00       150      0.8916875
-##   0.3  2          0.8               0.50        50      0.8979651
-##   0.3  2          0.8               0.50       100      0.8885472
-##   0.3  2          0.8               0.50       150      0.8909032
-##   0.3  2          0.8               0.75        50      0.8916813
-##   0.3  2          0.8               0.75       100      0.8861850
-##   0.3  2          0.8               0.75       150      0.8877536
-##   0.3  2          0.8               1.00        50      0.8932500
-##   0.3  2          0.8               1.00       100      0.8869724
-##   0.3  2          0.8               1.00       150      0.8838444
-##   0.3  3          0.6               0.50        50      0.8861911
-##   0.3  3          0.6               0.50       100      0.8799135
-##   0.3  3          0.6               0.50       150      0.8814853
-##   0.3  3          0.6               0.75        50      0.8893315
-##   0.3  3          0.6               0.75       100      0.8908970
-##   0.3  3          0.6               0.75       150      0.8924626
-##   0.3  3          0.6               1.00        50      0.8908939
-##   0.3  3          0.6               1.00       100      0.8885441
-##   0.3  3          0.6               1.00       150      0.8885472
-##   0.3  3          0.8               0.50        50      0.8963996
-##   0.3  3          0.8               0.50       100      0.8932623
-##   0.3  3          0.8               0.50       150      0.8909001
-##   0.3  3          0.8               0.75        50      0.8971808
-##   0.3  3          0.8               0.75       100      0.8901189
-##   0.3  3          0.8               0.75       150      0.8885472
-##   0.3  3          0.8               1.00        50      0.8924626
-##   0.3  3          0.8               1.00       100      0.8940374
-##   0.3  3          0.8               1.00       150      0.8924749
-##   0.4  1          0.6               0.50        50      0.8901158
-##   0.4  1          0.6               0.50       100      0.8885503
-##   0.4  1          0.6               0.50       150      0.8877659
-##   0.4  1          0.6               0.75        50      0.8932592
-##   0.4  1          0.6               0.75       100      0.8916875
-##   0.4  1          0.6               0.75       150      0.8885533
-##   0.4  1          0.6               1.00        50      0.8916844
-##   0.4  1          0.6               1.00       100      0.8908939
-##   0.4  1          0.6               1.00       150      0.8916813
-##   0.4  1          0.8               0.50        50      0.8908939
-##   0.4  1          0.8               0.50       100      0.8806886
-##   0.4  1          0.8               0.50       150      0.8807040
-##   0.4  1          0.8               0.75        50      0.8885379
-##   0.4  1          0.8               0.75       100      0.8940343
-##   0.4  1          0.8               0.75       150      0.8901220
-##   0.4  1          0.8               1.00        50      0.8916844
-##   0.4  1          0.8               1.00       100      0.8909001
-##   0.4  1          0.8               1.00       150      0.8901158
-##   0.4  2          0.6               0.50        50      0.8791354
-##   0.4  2          0.6               0.50       100      0.8822603
-##   0.4  2          0.6               0.50       150      0.8775637
-##   0.4  2          0.6               0.75        50      0.8932469
-##   0.4  2          0.6               0.75       100      0.8846163
-##   0.4  2          0.6               0.75       150      0.8877567
-##   0.4  2          0.6               1.00        50      0.8924687
-##   0.4  2          0.6               1.00       100      0.8807071
-##   0.4  2          0.6               1.00       150      0.8775637
-##   0.4  2          0.8               0.50        50      0.8877474
-##   0.4  2          0.8               0.50       100      0.8791231
-##   0.4  2          0.8               0.50       150      0.8814729
-##   0.4  2          0.8               0.75        50      0.8924687
-##   0.4  2          0.8               0.75       100      0.8822696
-##   0.4  2          0.8               0.75       150      0.8830601
-##   0.4  2          0.8               1.00        50      0.8924626
-##   0.4  2          0.8               1.00       100      0.8854037
-##   0.4  2          0.8               1.00       150      0.8861881
-##   0.4  3          0.6               0.50        50      0.8877690
-##   0.4  3          0.6               0.50       100      0.8744110
-##   0.4  3          0.6               0.50       150      0.8822757
-##   0.4  3          0.6               0.75        50      0.8830570
-##   0.4  3          0.6               0.75       100      0.8799166
-##   0.4  3          0.6               0.75       150      0.8838475
-##   0.4  3          0.6               1.00        50      0.8924656
-##   0.4  3          0.6               1.00       100      0.8885472
-##   0.4  3          0.6               1.00       150      0.8909063
-##   0.4  3          0.8               0.50        50      0.8908970
-##   0.4  3          0.8               0.50       100      0.8854130
-##   0.4  3          0.8               0.50       150      0.8854099
-##   0.4  3          0.8               0.75        50      0.8901127
-##   0.4  3          0.8               0.75       100      0.8806917
-##   0.4  3          0.8               0.75       150      0.8838382
-##   0.4  3          0.8               1.00        50      0.8854068
-##   0.4  3          0.8               1.00       100      0.8924687
-##   0.4  3          0.8               1.00       150      0.8909032
-##   Kappa    
-##   0.4957009
-##   0.4425390
-##   0.4882002
-##   0.4811659
-##   0.4812763
-##   0.4785132
-##   0.4882475
-##   0.4764148
-##   0.4705783
-##   0.4508490
-##   0.4561170
-##   0.4786290
-##   0.4530994
-##   0.4593989
-##   0.4414329
-##   0.4737059
-##   0.4708463
-##   0.4758348
-##   0.4954453
-##   0.4828673
-##   0.4929620
-##   0.4725150
-##   0.4712141
-##   0.4565884
-##   0.4972592
-##   0.4909499
-##   0.4989285
-##   0.5225920
-##   0.4868946
-##   0.4866466
-##   0.4726904
-##   0.4594097
-##   0.4623015
-##   0.4861740
-##   0.4653916
-##   0.4654629
-##   0.4554598
-##   0.4329108
-##   0.4343148
-##   0.4614735
-##   0.4885467
-##   0.4948866
-##   0.4852107
-##   0.4705528
-##   0.4738751
-##   0.5166239
-##   0.4924456
-##   0.4855554
-##   0.5155281
-##   0.4738027
-##   0.4751154
-##   0.4842716
-##   0.5028336
-##   0.4989297
-##   0.4801928
-##   0.4735747
-##   0.4794372
-##   0.4929928
-##   0.4863329
-##   0.4736504
-##   0.4733639
-##   0.4695814
-##   0.4837946
-##   0.4744729
-##   0.4243604
-##   0.4405287
-##   0.4479697
-##   0.4971800
-##   0.4815711
-##   0.4749609
-##   0.4733286
-##   0.4748200
-##   0.4311535
-##   0.4509463
-##   0.4276832
-##   0.4826823
-##   0.4471435
-##   0.4668645
-##   0.4896474
-##   0.4346124
-##   0.4245127
-##   0.4512583
-##   0.4300582
-##   0.4510655
-##   0.4946304
-##   0.4517005
-##   0.4577991
-##   0.4872769
-##   0.4609218
-##   0.4742951
-##   0.4877836
-##   0.4164625
-##   0.4475400
-##   0.4429426
-##   0.4370514
-##   0.4499253
-##   0.4834503
-##   0.4675826
-##   0.4749306
-##   0.4723861
-##   0.4559608
-##   0.4637864
-##   0.4962594
-##   0.4519310
-##   0.4672030
-##   0.4670970
-##   0.4955317
-##   0.4855943
-## 
-## Tuning parameter 'gamma' was held constant at a value of 0
-## 
-## Tuning parameter 'min_child_weight' was held constant at a value of 1
-## Accuracy was used to select the optimal model using the largest value.
-## The final values used for the model were nrounds = 50, max_depth = 2,
-##  eta = 0.3, gamma = 0, colsample_bytree = 0.8, min_child_weight = 1
-##  and subsample = 0.5.
 ```
+
+```r
+metrics(as.matrix(confusion_matrix_svm_linear$table))
+```
+
+```
+## [1] "Accuracy: 0.78022"
+```
+
+```
+##   precision    recall        f1
+## 0 0.8413462 0.8663366 0.8536585
+## 1 0.5846154 0.5352113 0.5588235
+```
+
+```r
+# # Tree Bag
+# model_crossvalidation_treebag <- train(maior_1m ~
+#                          general.duration +
+#                          general.fps +
+#                          general.frame_count +
+#                          general.frame_size.height +
+#                          # dominant_color.histogram_0 +
+#                          # dominant_color.histogram_1 +
+#                          # dominant_color.histogram_2 +
+#                          dominant_color.histogram_3 +
+#                          # dominant_color.histogram_4 +
+#                          # dominant_color.histogram_5 +
+#                          # dominant_color.histogram_6 +
+#                          dominant_color.histogram_7 +
+#                          # dominant_color.histogram_8 +
+#                          # dominant_color.histogram_9 +
+#                          # dominant_color.value +
+#                          face_detection.average_face2frame_ratio +
+#                          face_detection.average_face_count_per_frame +
+#                          face_detection.average_face_present +
+#                          text_detection.average_text2frame_ratio +
+#                          text_detection.average_text_frames +
+#                          shot_detection.average_shot_length +
+#                          shot_detection.shots_count +
+#                          # shot_detection.transition_histogram_0 +
+#                          # shot_detection.transition_histogram_1 +
+#                          # other.average_movie_speed +
+#                          other.clutter_metric +
+#                          rigidity.average_rigidity,
+#                          data = train, method = "treebag", trControl = tr)
+# 
+# model_crossvalidation_treebag
+```
+
+
+
+### Testando com a variável resposta sendo "mais de 1 milhão de views".
+
+
+```r
+# Create a Random Forest model with default parameters
+model_random_forest <- randomForest(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height+
+                         dominant_color.histogram_0 +
+                         dominant_color.histogram_1 +
+                         dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         dominant_color.histogram_4 +
+                         dominant_color.histogram_5 +
+                         dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         dominant_color.histogram_8 +
+                         dominant_color.histogram_9 +
+                         # dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present+
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames+
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count + 
+                         shot_detection.transition_histogram_0 + 
+                         shot_detection.transition_histogram_1+
+                         other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity, data = train, importance = TRUE)
+# model_random_forest
+# 
+# # To check important variables
+# importance(model_random_forest)      
+# varImpPlot(model_random_forest)
+
+# Predicting on test set
+test_pred_random_forest <- predict(model_random_forest, test, type = "class")
+
+# Checking classification metrics
+confusion_matrix_random_forest <- table(test_pred_random_forest, test$maior_1m)
+confusion_matrix_random_forest
+```
+
+```
+##                        
+## test_pred_random_forest   0   1
+##                       0 456  33
+##                       1  19  38
+```
+
+```r
+metrics(confusion_matrix_random_forest)
+```
+
+```
+## [1] "Accuracy: 0.904762"
+```
+
+```
+##   precision    recall        f1
+## 0 0.9600000 0.9325153 0.9460581
+## 1 0.5352113 0.6666667 0.5937500
+```
+
+
+### Variable selection
+
+A princípio, o modelo default que mais se saiu bem foi o que utiliza a variável resposta como sendo o vídeo ter mais de 1 milhão de views.
+
+Abaixo o teste fazendo uma seleção manual de variáveis.
+
+
+```r
+# Create a Random Forest model with default parameters
+model_rf_selection <- randomForest(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height+
+                         # dominant_color.histogram_0 +
+                         # dominant_color.histogram_1 +
+                         dominant_color.histogram_2 +
+                         # dominant_color.histogram_3 +
+                         # dominant_color.histogram_4 +
+                         # dominant_color.histogram_5 +
+                         # dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         # dominant_color.histogram_8 +
+                         # dominant_color.histogram_9 +
+                         dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present+
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames+
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         # shot_detection.transition_histogram_0 + 
+                         # shot_detection.transition_histogram_1 +
+                         # other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity, data = train, 
+                         importance = TRUE, mtry = 6)
+# model_rf_selection
+# 
+# # To check important variables
+# importance(model_rf_selection)
+# varImpPlot(model_rf_selection)
+
+# Predicting on test set
+test_pred_rf_selecion <- predict(model_rf_selection, test, type = "class")
+
+# Checking classification metrics
+confusion_matrix_rf_selecion <- table(test_pred_rf_selecion, test$maior_1m)
+confusion_matrix_rf_selecion
+```
+
+```
+##                      
+## test_pred_rf_selecion   0   1
+##                     0 447  35
+##                     1  28  36
+```
+
+```r
+metrics(confusion_matrix_rf_selecion)
+```
+
+```
+## [1] "Accuracy: 0.884615"
+```
+
+```
+##   precision    recall        f1
+## 0 0.9410526 0.9273859 0.9341693
+## 1 0.5070423 0.5625000 0.5333333
+```
+
+## Cross validation
+
+Agora, tunando o parâmetro mtry da Random Forest e utilizando croos validation com k = 5 folders.
+
+
+```r
+# 5 folds
+tr <- trainControl(method = "cv", number = 5)
+
+model_rf_crossvalidation <- train(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height +
+                         # dominant_color.histogram_0 +
+                         # dominant_color.histogram_1 +
+                         # dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         # dominant_color.histogram_4 +
+                         # dominant_color.histogram_5 +
+                         # dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         # dominant_color.histogram_8 +
+                         # dominant_color.histogram_9 +
+                         # dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present +
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames +
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         # shot_detection.transition_histogram_0 +
+                         # shot_detection.transition_histogram_1 +
+                         # other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity,
+                         data = train, method = "rf", trControl = tr)
+
+# model_rf_crossvalidation
+# 
+# 
+# # To check important variables
+# importance(model_rf_crossvalidation$finalModel)
+varImpPlot(model_rf_crossvalidation$finalModel)
+```
+
+![](exploring-data-and-models_files/figure-html/cross-validation2-1.png)<!-- -->
+
+```r
+# Predicting on test set
+test_pred_rf_crossvalidation <- predict(model_rf_crossvalidation$finalModel, test, type = "class")
+
+# Checking classification metrics
+confusion_matrix_rf_crossvalidation <- table(test_pred_rf_crossvalidation, test$maior_1m)  
+confusion_matrix_rf_crossvalidation
+```
+
+```
+##                             
+## test_pred_rf_crossvalidation   0   1
+##                            0 448  34
+##                            1  27  37
+```
+
+```r
+metrics(confusion_matrix_rf_crossvalidation)
+```
+
+```
+## [1] "Accuracy: 0.888278"
+```
+
+```
+##   precision    recall        f1
+## 0 0.9431579 0.9294606 0.9362591
+## 1 0.5211268 0.5781250 0.5481481
+```
+
+### Paper technique
+
+
+```r
+# Support Vector Machine Radial
+model_cv_svm_radial <- train(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height +
+                         # dominant_color.histogram_0 +
+                         # dominant_color.histogram_1 +
+                         # dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         # dominant_color.histogram_4 +
+                         # dominant_color.histogram_5 +
+                         # dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         # dominant_color.histogram_8 +
+                         # dominant_color.histogram_9 +
+                         # dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present +
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames +
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         # shot_detection.transition_histogram_0 + 
+                         # shot_detection.transition_histogram_1 +
+                         # other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity,
+                         data = train, method = "svmRadial", trControl = tr)
+
+# model_cv_svm_radial
+
+
+# Predicting o test set
+test_pred_svm_radial <- predict(model_cv_svm_radial, test)
+
+# Checking classification metrics
+confusion_matrix_svm_radial <- confusionMatrix(test_pred_svm_radial, test$maior_1m)
+confusion_matrix_svm_radial
+```
+
+```
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction   0   1
+##          0 452  36
+##          1  23  35
+##                                           
+##                Accuracy : 0.8919          
+##                  95% CI : (0.8628, 0.9167)
+##     No Information Rate : 0.87            
+##     P-Value [Acc > NIR] : 0.06902         
+##                                           
+##                   Kappa : 0.4821          
+##                                           
+##  Mcnemar's Test P-Value : 0.11823         
+##                                           
+##             Sensitivity : 0.9516          
+##             Specificity : 0.4930          
+##          Pos Pred Value : 0.9262          
+##          Neg Pred Value : 0.6034          
+##              Prevalence : 0.8700          
+##          Detection Rate : 0.8278          
+##    Detection Prevalence : 0.8938          
+##       Balanced Accuracy : 0.7223          
+##                                           
+##        'Positive' Class : 0               
+## 
+```
+
+```r
+metrics(as.matrix(confusion_matrix_svm_radial$table))
+```
+
+```
+## [1] "Accuracy: 0.891941"
+```
+
+```
+##   precision    recall        f1
+## 0 0.9515789 0.9262295 0.9387331
+## 1 0.4929577 0.6034483 0.5426357
+```
+
+### Other models
+
+Ajustando outros modelos de machine larning para comparação.
+
 
 ```r
 # Support Vector Machine Linear
-model_crossvalidation_svm <- train(maior_1m ~ 
+model_cv_svm_linear <- train(maior_1m ~ 
                          general.duration +
                          general.fps +
                          general.frame_count +
@@ -4393,65 +4333,161 @@ model_crossvalidation_svm <- train(maior_1m ~
                          # other.average_movie_speed +
                          other.clutter_metric +
                          rigidity.average_rigidity,
-                         data = train, method = "svmLinearWeights2", trControl = tr)
+                         data = train, method = "svmLinear", trControl = tr)
 
-model_crossvalidation_svm
+# model_cv_svm_linear
+
+# Predicting on test set
+test_pred_svm_linear <- predict(model_cv_svm_linear, test)
+# Checking classification metrics
+
+confusion_matrix_svm_linear <- confusionMatrix(test_pred_svm_linear, test$maior_1m)
+confusion_matrix_svm_linear
 ```
 
 ```
-## L2 Regularized Linear Support Vector Machines with Class Weights 
+## Confusion Matrix and Statistics
 ## 
-## 1274 samples
-##   15 predictor
-##    2 classes: '0', '1' 
+##           Reference
+## Prediction   0   1
+##          0 466  60
+##          1   9  11
+##                                           
+##                Accuracy : 0.8736          
+##                  95% CI : (0.8428, 0.9003)
+##     No Information Rate : 0.87            
+##     P-Value [Acc > NIR] : 0.4303          
+##                                           
+##                   Kappa : 0.1958          
+##                                           
+##  Mcnemar's Test P-Value : 0.000000001752  
+##                                           
+##             Sensitivity : 0.9811          
+##             Specificity : 0.1549          
+##          Pos Pred Value : 0.8859          
+##          Neg Pred Value : 0.5500          
+##              Prevalence : 0.8700          
+##          Detection Rate : 0.8535          
+##    Detection Prevalence : 0.9634          
+##       Balanced Accuracy : 0.5680          
+##                                           
+##        'Positive' Class : 0               
 ## 
-## No pre-processing
-## Resampling: Cross-Validated (5 fold) 
-## Summary of sample sizes: 1019, 1019, 1019, 1019, 1020 
-## Resampling results across tuning parameters:
-## 
-##   cost  Loss  weight  Accuracy   Kappa     
-##   0.25  L1    1       0.8665493  0.25317924
-##   0.25  L1    2       0.8532191  0.03868323
-##   0.25  L1    3       0.6695754  0.23600965
-##   0.25  L2    1       0.8602872  0.09156669
-##   0.25  L2    2       0.8767701  0.35849062
-##   0.25  L2    3       0.8759827  0.40966362
-##   0.50  L1    1       0.6845947  0.07607185
-##   0.50  L1    2       0.7049838  0.15924930
-##   0.50  L1    3       0.6736143  0.08390080
-##   0.50  L2    1       0.8602872  0.09156669
-##   0.50  L2    2       0.8767701  0.35849062
-##   0.50  L2    3       0.8759827  0.40966362
-##   1.00  L1    1       0.6982245  0.10288139
-##   1.00  L1    2       0.7120488  0.04946613
-##   1.00  L1    3       0.6994658  0.16057281
-##   1.00  L2    1       0.8602872  0.09156669
-##   1.00  L2    2       0.8767701  0.35849062
-##   1.00  L2    3       0.8759827  0.40966362
-## 
-## Accuracy was used to select the optimal model using the largest value.
-## The final values used for the model were cost = 0.25, Loss = L2 and
-##  weight = 2.
 ```
 
 ```r
-# Tree Bag
-model_crossvalidation_treebag <- train(maior_1m ~ 
+metrics(as.matrix(confusion_matrix_svm_linear$table))
+```
+
+```
+## [1] "Accuracy: 0.873626"
+```
+
+```
+##   precision    recall        f1
+## 0 0.9810526 0.8859316 0.9310689
+## 1 0.1549296 0.5500000 0.2417582
+```
+
+
+
+### WITHOUT Variable selection
+
+A princípio, o modelo default que mais se saiu bem foi o que utiliza a variável resposta como sendo o vídeo ter mais de 1 milhão de views.
+
+Abaixo o teste fazendo uma seleção manual de variáveis.
+
+
+```r
+# Create a Random Forest model with default parameters
+model_rf_selection <- randomForest(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height+
+                         dominant_color.histogram_0 +
+                         dominant_color.histogram_1 +
+                         dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         dominant_color.histogram_4 +
+                         dominant_color.histogram_5 +
+                         dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         dominant_color.histogram_8 +
+                         dominant_color.histogram_9 +
+                         dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present+
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames+
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         shot_detection.transition_histogram_0 +
+                         shot_detection.transition_histogram_1 +
+                         other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity, data = train, 
+                         importance = TRUE, mtry = 6)
+# model_rf_selection
+# 
+# # To check important variables
+# importance(model_rf_selection)
+# varImpPlot(model_rf_selection)
+
+# Predicting on test set
+test_pred_rf_selecion <- predict(model_rf_selection, test, type = "class")
+
+# Checking classification metrics
+confusion_matrix_rf_selecion <- table(test_pred_rf_selecion, test$maior_1m)
+confusion_matrix_rf_selecion
+```
+
+```
+##                      
+## test_pred_rf_selecion   0   1
+##                     0 455  32
+##                     1  20  39
+```
+
+```r
+metrics(confusion_matrix_rf_selecion)
+```
+
+```
+## [1] "Accuracy: 0.904762"
+```
+
+```
+##   precision    recall        f1
+## 0 0.9578947 0.9342916 0.9459459
+## 1 0.5492958 0.6610169 0.6000000
+```
+
+## Cross validation
+
+Agora, tunando o parâmetro mtry da Random Forest e utilizando croos validation com k = 5 folders.
+
+
+```r
+# 5 folds
+tr <- trainControl(method = "cv", number = 5)
+
+model_rf_crossvalidation <- train(maior_1m ~ 
                          general.duration +
                          general.fps +
                          general.frame_count +
                          general.frame_size.height +
-                         # dominant_color.histogram_0 +
-                         # dominant_color.histogram_1 +
-                         # dominant_color.histogram_2 +
+                         dominant_color.histogram_0 +
+                         dominant_color.histogram_1 +
+                         dominant_color.histogram_2 +
                          dominant_color.histogram_3 +
-                         # dominant_color.histogram_4 +
-                         # dominant_color.histogram_5 +
-                         # dominant_color.histogram_6 +
+                         dominant_color.histogram_4 +
+                         dominant_color.histogram_5 +
+                         dominant_color.histogram_6 +
                          dominant_color.histogram_7 +
-                         # dominant_color.histogram_8 +
-                         # dominant_color.histogram_9 +
+                         dominant_color.histogram_8 +
+                         dominant_color.histogram_9 +
                          # dominant_color.value +
                          face_detection.average_face2frame_ratio + 
                          face_detection.average_face_count_per_frame + 
@@ -4460,31 +4496,235 @@ model_crossvalidation_treebag <- train(maior_1m ~
                          text_detection.average_text_frames +
                          shot_detection.average_shot_length + 
                          shot_detection.shots_count +
-                         # shot_detection.transition_histogram_0 + 
-                         # shot_detection.transition_histogram_1 +
-                         # other.average_movie_speed +
+                         shot_detection.transition_histogram_0 +
+                         shot_detection.transition_histogram_1 +
+                         other.average_movie_speed +
                          other.clutter_metric +
                          rigidity.average_rigidity,
-                         data = train, method = "treebag", trControl = tr)
+                         data = train, method = "rf", trControl = tr)
 
-model_crossvalidation_treebag
+# model_rf_crossvalidation
+# 
+# 
+# # To check important variables
+# importance(model_rf_crossvalidation$finalModel)
+varImpPlot(model_rf_crossvalidation$finalModel)
+```
+
+![](exploring-data-and-models_files/figure-html/cross-validation22-1.png)<!-- -->
+
+```r
+# Predicting on test set
+test_pred_rf_crossvalidation <- predict(model_rf_crossvalidation$finalModel, test, type = "class")
+
+# Checking classification metrics
+confusion_matrix_rf_crossvalidation <- table(test_pred_rf_crossvalidation, test$maior_1m)  
+confusion_matrix_rf_crossvalidation
 ```
 
 ```
-## Bagged CART 
-## 
-## 1274 samples
-##   15 predictor
-##    2 classes: '0', '1' 
-## 
-## No pre-processing
-## Resampling: Cross-Validated (5 fold) 
-## Summary of sample sizes: 1019, 1019, 1019, 1020, 1019 
-## Resampling results:
-## 
-##   Accuracy   Kappa    
-##   0.8963934  0.5303224
+##                             
+## test_pred_rf_crossvalidation   0   1
+##                            0 450  33
+##                            1  25  38
 ```
+
+```r
+metrics(confusion_matrix_rf_crossvalidation)
+```
+
+```
+## [1] "Accuracy: 0.893773"
+```
+
+```
+##   precision    recall        f1
+## 0 0.9473684 0.9316770 0.9394572
+## 1 0.5352113 0.6031746 0.5671642
+```
+
+### Paper technique
+
+
+```r
+# Support Vector Machine Radial
+model_cv_svm_radial <- train(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height +
+                         dominant_color.histogram_0 +
+                         dominant_color.histogram_1 +
+                         dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         dominant_color.histogram_4 +
+                         dominant_color.histogram_5 +
+                         dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         dominant_color.histogram_8 +
+                         dominant_color.histogram_9 +
+                         # dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present +
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames +
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         shot_detection.transition_histogram_0 +
+                         shot_detection.transition_histogram_1 +
+                         other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity,
+                         data = train, method = "svmRadial", trControl = tr)
+
+# model_cv_svm_radial
+
+
+# Predicting o test set
+test_pred_svm_radial <- predict(model_cv_svm_radial, test)
+
+# Checking classification metrics
+confusion_matrix_svm_radial <- confusionMatrix(test_pred_svm_radial, test$maior_1m)
+confusion_matrix_svm_radial
+```
+
+```
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction   0   1
+##          0 459  39
+##          1  16  32
+##                                           
+##                Accuracy : 0.8993          
+##                  95% CI : (0.8709, 0.9232)
+##     No Information Rate : 0.87            
+##     P-Value [Acc > NIR] : 0.021518        
+##                                           
+##                   Kappa : 0.4836          
+##                                           
+##  Mcnemar's Test P-Value : 0.003012        
+##                                           
+##             Sensitivity : 0.9663          
+##             Specificity : 0.4507          
+##          Pos Pred Value : 0.9217          
+##          Neg Pred Value : 0.6667          
+##              Prevalence : 0.8700          
+##          Detection Rate : 0.8407          
+##    Detection Prevalence : 0.9121          
+##       Balanced Accuracy : 0.7085          
+##                                           
+##        'Positive' Class : 0               
+## 
+```
+
+```r
+metrics(as.matrix(confusion_matrix_svm_radial$table))
+```
+
+```
+## [1] "Accuracy: 0.899267"
+```
+
+```
+##   precision    recall        f1
+## 0 0.9663158 0.9216867 0.9434738
+## 1 0.4507042 0.6666667 0.5378151
+```
+
+### Other models
+
+Ajustando outros modelos de machine larning para comparação.
+
+
+```r
+# Support Vector Machine Linear
+model_cv_svm_linear <- train(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height +
+                         dominant_color.histogram_0 +
+                         dominant_color.histogram_1 +
+                         dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         dominant_color.histogram_4 +
+                         dominant_color.histogram_5 +
+                         dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         dominant_color.histogram_8 +
+                         dominant_color.histogram_9 +
+                         dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present +
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames +
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         shot_detection.transition_histogram_0 +
+                         shot_detection.transition_histogram_1 +
+                         other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity,
+                         data = train, method = "svmLinear", trControl = tr)
+
+# model_cv_svm_linear
+
+# Predicting on test set
+test_pred_svm_linear <- predict(model_cv_svm_linear, test)
+# Checking classification metrics
+
+confusion_matrix_svm_linear <- confusionMatrix(test_pred_svm_linear, test$maior_1m)
+confusion_matrix_svm_linear
+```
+
+```
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction   0   1
+##          0 453  44
+##          1  22  27
+##                                           
+##                Accuracy : 0.8791          
+##                  95% CI : (0.8488, 0.9053)
+##     No Information Rate : 0.87            
+##     P-Value [Acc > NIR] : 0.28709         
+##                                           
+##                   Kappa : 0.3847          
+##                                           
+##  Mcnemar's Test P-Value : 0.00974         
+##                                           
+##             Sensitivity : 0.9537          
+##             Specificity : 0.3803          
+##          Pos Pred Value : 0.9115          
+##          Neg Pred Value : 0.5510          
+##              Prevalence : 0.8700          
+##          Detection Rate : 0.8297          
+##    Detection Prevalence : 0.9103          
+##       Balanced Accuracy : 0.6670          
+##                                           
+##        'Positive' Class : 0               
+## 
+```
+
+```r
+metrics(as.matrix(confusion_matrix_svm_linear$table))
+```
+
+```
+## [1] "Accuracy: 0.879121"
+```
+
+```
+##   precision    recall        f1
+## 0 0.9536842 0.9114688 0.9320988
+## 1 0.3802817 0.5510204 0.4500000
+```
+
+
 
 
 

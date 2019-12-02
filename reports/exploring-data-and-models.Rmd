@@ -1,8 +1,9 @@
 ---
-title: "Predicting Number of Views"
+title: "Predicting Number of Views - Exploring"
 author: "Bruna Martini Dalmoro"
 output:
   html_document:
+    code_folding: hide
     keep_md: yes
 ---
 
@@ -25,6 +26,8 @@ library(rpart.plot) # Decision Trees
 library(randomForest) # Random Forest Models
 library(caret)      # Cross Validation
 library(ROCR)       # ROC curve
+
+source("../scripts/functions/model_metrics.R") # Accuracy, Precision, Recal and F1
 
 ```
 
@@ -303,7 +306,10 @@ visual_resp <- visual_96 %>%
   mutate(
     quartis = ntile(visual_96$views_96,4) %>% as.factor(),
     quartil_4 = ifelse(quartis == 4, 1, 0) %>% as.factor(),
-    maior_1m = ifelse(views_96 >= 1000000, 1, 0) %>% as.factor()
+    maior_1m = ifelse(views_96 >= 1000000, 1, 0) %>% as.factor(),
+    maior_500k = ifelse(views_96 >= 500000, 1, 0) %>% as.factor(),
+    tres_partes = ifelse(views_96 >= 1000000, "> 1m", 
+                         ifelse(views_96 < 1000000 & views_96 >= 500000, "> 500k", "Menor")) %>% as.factor()
   )
 
 ```
@@ -485,7 +491,7 @@ rpart.plot(tree_other_1m)
 
 ## Random Forest
 
-###Testando com a variável resposta "quartis", conde cada quartil é uma categoria.
+### Testando com a variável resposta "quartis", conde cada quartil é uma categoria.
 
 ```{r random-forests-quartis}
 # Create a Random Forest model with default parameters
@@ -536,7 +542,7 @@ table(predValid_quartis, test$quartis)
 mean(predValid_quartis == test$quartis)
 ```
 
-###Testando com a variável resposta "estar no quarto quartil".
+### Testando com a variável resposta "estar no quarto quartil".
 
 ```{r random-forests-quartil4}
 # Create a Random Forest model with default parameters
@@ -587,11 +593,11 @@ table(predValid_quartil4, test$quartil_4)
 mean(predValid_quartil4 == test$quartil_4)
 ```
 
-###Testando com a variável resposta sendo "mais de 1 milhão de views".
+### Testando com a variável resposta sendo "mais de 500 mil views".
 
-```{r random-forests-maior1m}
+```{r random-forests}
 # Create a Random Forest model with default parameters
-model_default_maior1m <- randomForest(maior_1m ~ 
+model_random_forest <- randomForest(maior_500k ~ 
                          general.duration +
                          general.fps +
                          general.frame_count +
@@ -619,24 +625,22 @@ model_default_maior1m <- randomForest(maior_1m ~
                          other.average_movie_speed +
                          other.clutter_metric +
                          rigidity.average_rigidity, data = train, importance = TRUE)
-model_default_maior1m
-
-# To check important variables
-importance(model_default_maior1m)        
-varImpPlot(model_default_maior1m)
-
-# Predicting on train set
-predTrain_maior1m <- predict(model_default_maior1m, train, type = "class")
-# Checking classification accuracy
-table(predTrain_maior1m, train$maior_1m)
-
+# model_random_forest
+# 
+# # To check important variables
+# importance(model_random_forest)      
+# varImpPlot(model_random_forest)
 
 # Predicting on test set
-predValid_maior1m <- predict(model_default_maior1m, test, type = "class")
-# Checking classification accuracy
-table(predValid_maior1m, test$maior_1m)  
-mean(predValid_maior1m == test$maior_1m)
+test_pred_random_forest <- predict(model_random_forest, test, type = "class")
+
+# Checking classification metrics
+confusion_matrix_random_forest <- table(test_pred_random_forest, test$maior_500k)
+confusion_matrix_random_forest
+
+metrics(confusion_matrix_random_forest)
 ```
+
 
 ### Variable selection
 
@@ -647,7 +651,7 @@ Abaixo o teste fazendo uma seleção manual de variáveis.
 ```{r random-forests-testing}
 
 # Create a Random Forest model with default parameters
-model_testing <- randomForest(maior_1m ~ 
+model_rf_selection <- randomForest(maior_500k ~ 
                          general.duration +
                          general.fps +
                          general.frame_count +
@@ -676,23 +680,20 @@ model_testing <- randomForest(maior_1m ~
                          other.clutter_metric +
                          rigidity.average_rigidity, data = train, 
                          importance = TRUE, mtry = 6)
-model_testing
-
-# To check important variables
-importance(model_testing)
-varImpPlot(model_testing)
-
-# Predicting on train set
-predTrain_testing <- predict(model_testing, train, type = "class")
-# Checking classification accuracy
-table(predTrain_testing, train$maior_1m)
-
+# model_rf_selection
+# 
+# # To check important variables
+# importance(model_rf_selection)
+# varImpPlot(model_rf_selection)
 
 # Predicting on test set
-predValid_testing <- predict(model_testing, test, type = "class")
-# Checking classification accuracy
-table(predValid_testing, test$maior_1m)  
-mean(predValid_testing == test$maior_1m)
+test_pred_rf_selecion <- predict(model_rf_selection, test, type = "class")
+
+# Checking classification metrics
+confusion_matrix_rf_selecion <- table(test_pred_rf_selecion, test$maior_500k)
+confusion_matrix_rf_selecion
+
+metrics(confusion_matrix_rf_selecion)
 ```
 
 ## Cross validation
@@ -704,7 +705,7 @@ Agora, tunando o parâmetro mtry da Random Forest e utilizando croos validation 
 # 5 folds
 tr <- trainControl(method = "cv", number = 5)
 
-model_crossvalidation <- train(maior_1m ~ 
+model_rf_crossvalidation <- train(maior_500k ~ 
                          general.duration +
                          general.fps +
                          general.frame_count +
@@ -727,37 +728,28 @@ model_crossvalidation <- train(maior_1m ~
                          text_detection.average_text_frames +
                          shot_detection.average_shot_length + 
                          shot_detection.shots_count +
-                         # shot_detection.transition_histogram_0 + 
+                         # shot_detection.transition_histogram_0 +
                          # shot_detection.transition_histogram_1 +
                          # other.average_movie_speed +
                          other.clutter_metric +
                          rigidity.average_rigidity,
                          data = train, method = "rf", trControl = tr)
 
-model_crossvalidation
-
-
-# To check important variables
-importance(model_crossvalidation$finalModel)
-varImpPlot(model_crossvalidation$finalModel)
-
-# Predicting on train set
-predTrain_crossvalidation <- predict(model_crossvalidation$finalModel, train, type = "class")
-# Checking classification accuracy
-table(predTrain_crossvalidation, train$maior_1m)
-
+# model_rf_crossvalidation
+# 
+# 
+# # To check important variables
+# importance(model_rf_crossvalidation$finalModel)
+varImpPlot(model_rf_crossvalidation$finalModel)
 
 # Predicting on test set
-predValid_crossvalidation <- predict(model_crossvalidation$finalModel, test, type = "class")
-# Checking classification accuracy
-table(predValid_crossvalidation, test$maior_1m)  
-mean(predValid_crossvalidation == test$maior_1m)
+test_pred_rf_crossvalidation <- predict(model_rf_crossvalidation$finalModel, test, type = "class")
 
-# # AUC - ROC
-# 
-# pred <- prediction(predValid_crossvalidation, test$maior_1m)
-# perf <- performance(pred, "auc")
-# plot(perf,colorize=TRUE)
+# Checking classification metrics
+confusion_matrix_rf_crossvalidation <- table(test_pred_rf_crossvalidation, test$maior_500k)  
+confusion_matrix_rf_crossvalidation
+
+metrics(confusion_matrix_rf_crossvalidation)
 
 ```
 
@@ -766,7 +758,7 @@ mean(predValid_crossvalidation == test$maior_1m)
 ```{r paper-technique}
 
 # Support Vector Machine Radial
-model_crossvalidation_svm_radial <- train(maior_1m ~ 
+model_cv_svm_radial <- train(maior_500k ~ 
                          general.duration +
                          general.fps +
                          general.frame_count +
@@ -796,8 +788,17 @@ model_crossvalidation_svm_radial <- train(maior_1m ~
                          rigidity.average_rigidity,
                          data = train, method = "svmRadial", trControl = tr)
 
-model_crossvalidation_svm_radial
+# model_cv_svm_radial
 
+
+# Predicting o test set
+test_pred_svm_radial <- predict(model_cv_svm_radial, test)
+
+# Checking classification metrics
+confusion_matrix_svm_radial <- confusionMatrix(test_pred_svm_radial, test$maior_500k)
+confusion_matrix_svm_radial
+
+metrics(as.matrix(confusion_matrix_svm_radial$table))
 
 
 ```
@@ -807,41 +808,8 @@ model_crossvalidation_svm_radial
 Ajustando outros modelos de machine larning para comparação.
 
 ```{r cross-validation-outros}
-# XGBoost
-model_crossvalidation_xgb <- train(maior_1m ~ 
-                         general.duration +
-                         general.fps +
-                         general.frame_count +
-                         general.frame_size.height +
-                         # dominant_color.histogram_0 +
-                         # dominant_color.histogram_1 +
-                         # dominant_color.histogram_2 +
-                         dominant_color.histogram_3 +
-                         # dominant_color.histogram_4 +
-                         # dominant_color.histogram_5 +
-                         # dominant_color.histogram_6 +
-                         dominant_color.histogram_7 +
-                         # dominant_color.histogram_8 +
-                         # dominant_color.histogram_9 +
-                         # dominant_color.value +
-                         face_detection.average_face2frame_ratio + 
-                         face_detection.average_face_count_per_frame + 
-                         face_detection.average_face_present +
-                         text_detection.average_text2frame_ratio +
-                         text_detection.average_text_frames +
-                         shot_detection.average_shot_length + 
-                         shot_detection.shots_count +
-                         # shot_detection.transition_histogram_0 + 
-                         # shot_detection.transition_histogram_1 +
-                         # other.average_movie_speed +
-                         other.clutter_metric +
-                         rigidity.average_rigidity,
-                         data = train, method = "xgbTree", trControl = tr)
-
-model_crossvalidation_xgb
-
 # Support Vector Machine Linear
-model_crossvalidation_svm <- train(maior_1m ~ 
+model_cv_svm_linear <- train(maior_500k ~ 
                          general.duration +
                          general.fps +
                          general.frame_count +
@@ -869,43 +837,529 @@ model_crossvalidation_svm <- train(maior_1m ~
                          # other.average_movie_speed +
                          other.clutter_metric +
                          rigidity.average_rigidity,
-                         data = train, method = "svmLinearWeights2", trControl = tr)
+                         data = train, method = "svmLinear", trControl = tr)
 
-model_crossvalidation_svm
+# model_cv_svm_linear
 
-# Tree Bag
-model_crossvalidation_treebag <- train(maior_1m ~ 
-                         general.duration +
-                         general.fps +
-                         general.frame_count +
-                         general.frame_size.height +
-                         # dominant_color.histogram_0 +
-                         # dominant_color.histogram_1 +
-                         # dominant_color.histogram_2 +
-                         dominant_color.histogram_3 +
-                         # dominant_color.histogram_4 +
-                         # dominant_color.histogram_5 +
-                         # dominant_color.histogram_6 +
-                         dominant_color.histogram_7 +
-                         # dominant_color.histogram_8 +
-                         # dominant_color.histogram_9 +
-                         # dominant_color.value +
-                         face_detection.average_face2frame_ratio + 
-                         face_detection.average_face_count_per_frame + 
-                         face_detection.average_face_present +
-                         text_detection.average_text2frame_ratio +
-                         text_detection.average_text_frames +
-                         shot_detection.average_shot_length + 
-                         shot_detection.shots_count +
-                         # shot_detection.transition_histogram_0 + 
-                         # shot_detection.transition_histogram_1 +
-                         # other.average_movie_speed +
-                         other.clutter_metric +
-                         rigidity.average_rigidity,
-                         data = train, method = "treebag", trControl = tr)
+# Predicting on test set
+test_pred_svm_linear <- predict(model_cv_svm_linear, test)
+# Checking classification metrics
 
-model_crossvalidation_treebag
+confusion_matrix_svm_linear <- confusionMatrix(test_pred_svm_linear, test$maior_500k)
+confusion_matrix_svm_linear
+
+metrics(as.matrix(confusion_matrix_svm_linear$table))
+
+
+
+# # Tree Bag
+# model_crossvalidation_treebag <- train(maior_1m ~
+#                          general.duration +
+#                          general.fps +
+#                          general.frame_count +
+#                          general.frame_size.height +
+#                          # dominant_color.histogram_0 +
+#                          # dominant_color.histogram_1 +
+#                          # dominant_color.histogram_2 +
+#                          dominant_color.histogram_3 +
+#                          # dominant_color.histogram_4 +
+#                          # dominant_color.histogram_5 +
+#                          # dominant_color.histogram_6 +
+#                          dominant_color.histogram_7 +
+#                          # dominant_color.histogram_8 +
+#                          # dominant_color.histogram_9 +
+#                          # dominant_color.value +
+#                          face_detection.average_face2frame_ratio +
+#                          face_detection.average_face_count_per_frame +
+#                          face_detection.average_face_present +
+#                          text_detection.average_text2frame_ratio +
+#                          text_detection.average_text_frames +
+#                          shot_detection.average_shot_length +
+#                          shot_detection.shots_count +
+#                          # shot_detection.transition_histogram_0 +
+#                          # shot_detection.transition_histogram_1 +
+#                          # other.average_movie_speed +
+#                          other.clutter_metric +
+#                          rigidity.average_rigidity,
+#                          data = train, method = "treebag", trControl = tr)
+# 
+# model_crossvalidation_treebag
 ```
+
+
+
+### Testando com a variável resposta sendo "mais de 1 milhão de views".
+
+```{r random-forests2}
+# Create a Random Forest model with default parameters
+model_random_forest <- randomForest(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height+
+                         dominant_color.histogram_0 +
+                         dominant_color.histogram_1 +
+                         dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         dominant_color.histogram_4 +
+                         dominant_color.histogram_5 +
+                         dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         dominant_color.histogram_8 +
+                         dominant_color.histogram_9 +
+                         # dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present+
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames+
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count + 
+                         shot_detection.transition_histogram_0 + 
+                         shot_detection.transition_histogram_1+
+                         other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity, data = train, importance = TRUE)
+# model_random_forest
+# 
+# # To check important variables
+# importance(model_random_forest)      
+# varImpPlot(model_random_forest)
+
+# Predicting on test set
+test_pred_random_forest <- predict(model_random_forest, test, type = "class")
+
+# Checking classification metrics
+confusion_matrix_random_forest <- table(test_pred_random_forest, test$maior_1m)
+confusion_matrix_random_forest
+
+metrics(confusion_matrix_random_forest)
+```
+
+
+### Variable selection
+
+A princípio, o modelo default que mais se saiu bem foi o que utiliza a variável resposta como sendo o vídeo ter mais de 1 milhão de views.
+
+Abaixo o teste fazendo uma seleção manual de variáveis.
+
+```{r random-forests-testing2}
+
+# Create a Random Forest model with default parameters
+model_rf_selection <- randomForest(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height+
+                         # dominant_color.histogram_0 +
+                         # dominant_color.histogram_1 +
+                         dominant_color.histogram_2 +
+                         # dominant_color.histogram_3 +
+                         # dominant_color.histogram_4 +
+                         # dominant_color.histogram_5 +
+                         # dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         # dominant_color.histogram_8 +
+                         # dominant_color.histogram_9 +
+                         dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present+
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames+
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         # shot_detection.transition_histogram_0 + 
+                         # shot_detection.transition_histogram_1 +
+                         # other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity, data = train, 
+                         importance = TRUE, mtry = 6)
+# model_rf_selection
+# 
+# # To check important variables
+# importance(model_rf_selection)
+# varImpPlot(model_rf_selection)
+
+# Predicting on test set
+test_pred_rf_selecion <- predict(model_rf_selection, test, type = "class")
+
+# Checking classification metrics
+confusion_matrix_rf_selecion <- table(test_pred_rf_selecion, test$maior_1m)
+confusion_matrix_rf_selecion
+
+metrics(confusion_matrix_rf_selecion)
+```
+
+## Cross validation
+
+Agora, tunando o parâmetro mtry da Random Forest e utilizando croos validation com k = 5 folders.
+
+```{r cross-validation2}
+
+# 5 folds
+tr <- trainControl(method = "cv", number = 5)
+
+model_rf_crossvalidation <- train(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height +
+                         # dominant_color.histogram_0 +
+                         # dominant_color.histogram_1 +
+                         # dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         # dominant_color.histogram_4 +
+                         # dominant_color.histogram_5 +
+                         # dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         # dominant_color.histogram_8 +
+                         # dominant_color.histogram_9 +
+                         # dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present +
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames +
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         # shot_detection.transition_histogram_0 +
+                         # shot_detection.transition_histogram_1 +
+                         # other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity,
+                         data = train, method = "rf", trControl = tr)
+
+# model_rf_crossvalidation
+# 
+# 
+# # To check important variables
+# importance(model_rf_crossvalidation$finalModel)
+varImpPlot(model_rf_crossvalidation$finalModel)
+
+# Predicting on test set
+test_pred_rf_crossvalidation <- predict(model_rf_crossvalidation$finalModel, test, type = "class")
+
+# Checking classification metrics
+confusion_matrix_rf_crossvalidation <- table(test_pred_rf_crossvalidation, test$maior_1m)  
+confusion_matrix_rf_crossvalidation
+
+metrics(confusion_matrix_rf_crossvalidation)
+
+```
+
+### Paper technique
+
+```{r paper-technique2}
+
+# Support Vector Machine Radial
+model_cv_svm_radial <- train(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height +
+                         # dominant_color.histogram_0 +
+                         # dominant_color.histogram_1 +
+                         # dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         # dominant_color.histogram_4 +
+                         # dominant_color.histogram_5 +
+                         # dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         # dominant_color.histogram_8 +
+                         # dominant_color.histogram_9 +
+                         # dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present +
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames +
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         # shot_detection.transition_histogram_0 + 
+                         # shot_detection.transition_histogram_1 +
+                         # other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity,
+                         data = train, method = "svmRadial", trControl = tr)
+
+# model_cv_svm_radial
+
+
+# Predicting o test set
+test_pred_svm_radial <- predict(model_cv_svm_radial, test)
+
+# Checking classification metrics
+confusion_matrix_svm_radial <- confusionMatrix(test_pred_svm_radial, test$maior_1m)
+confusion_matrix_svm_radial
+
+metrics(as.matrix(confusion_matrix_svm_radial$table))
+
+
+```
+
+### Other models
+
+Ajustando outros modelos de machine larning para comparação.
+
+```{r cross-validation-outros2}
+# Support Vector Machine Linear
+model_cv_svm_linear <- train(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height +
+                         # dominant_color.histogram_0 +
+                         # dominant_color.histogram_1 +
+                         # dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         # dominant_color.histogram_4 +
+                         # dominant_color.histogram_5 +
+                         # dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         # dominant_color.histogram_8 +
+                         # dominant_color.histogram_9 +
+                         # dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present +
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames +
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         # shot_detection.transition_histogram_0 + 
+                         # shot_detection.transition_histogram_1 +
+                         # other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity,
+                         data = train, method = "svmLinear", trControl = tr)
+
+# model_cv_svm_linear
+
+# Predicting on test set
+test_pred_svm_linear <- predict(model_cv_svm_linear, test)
+# Checking classification metrics
+
+confusion_matrix_svm_linear <- confusionMatrix(test_pred_svm_linear, test$maior_1m)
+confusion_matrix_svm_linear
+
+metrics(as.matrix(confusion_matrix_svm_linear$table))
+
+```
+
+
+
+### WITHOUT Variable selection
+
+A princípio, o modelo default que mais se saiu bem foi o que utiliza a variável resposta como sendo o vídeo ter mais de 1 milhão de views.
+
+Abaixo o teste fazendo uma seleção manual de variáveis.
+
+```{r random-forests-testing22}
+
+# Create a Random Forest model with default parameters
+model_rf_selection <- randomForest(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height+
+                         dominant_color.histogram_0 +
+                         dominant_color.histogram_1 +
+                         dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         dominant_color.histogram_4 +
+                         dominant_color.histogram_5 +
+                         dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         dominant_color.histogram_8 +
+                         dominant_color.histogram_9 +
+                         dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present+
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames+
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         shot_detection.transition_histogram_0 +
+                         shot_detection.transition_histogram_1 +
+                         other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity, data = train, 
+                         importance = TRUE, mtry = 6)
+# model_rf_selection
+# 
+# # To check important variables
+# importance(model_rf_selection)
+# varImpPlot(model_rf_selection)
+
+# Predicting on test set
+test_pred_rf_selecion <- predict(model_rf_selection, test, type = "class")
+
+# Checking classification metrics
+confusion_matrix_rf_selecion <- table(test_pred_rf_selecion, test$maior_1m)
+confusion_matrix_rf_selecion
+
+metrics(confusion_matrix_rf_selecion)
+```
+
+## Cross validation
+
+Agora, tunando o parâmetro mtry da Random Forest e utilizando croos validation com k = 5 folders.
+
+```{r cross-validation22}
+
+# 5 folds
+tr <- trainControl(method = "cv", number = 5)
+
+model_rf_crossvalidation <- train(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height +
+                         dominant_color.histogram_0 +
+                         dominant_color.histogram_1 +
+                         dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         dominant_color.histogram_4 +
+                         dominant_color.histogram_5 +
+                         dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         dominant_color.histogram_8 +
+                         dominant_color.histogram_9 +
+                         # dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present +
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames +
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         shot_detection.transition_histogram_0 +
+                         shot_detection.transition_histogram_1 +
+                         other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity,
+                         data = train, method = "rf", trControl = tr)
+
+# model_rf_crossvalidation
+# 
+# 
+# # To check important variables
+# importance(model_rf_crossvalidation$finalModel)
+varImpPlot(model_rf_crossvalidation$finalModel)
+
+# Predicting on test set
+test_pred_rf_crossvalidation <- predict(model_rf_crossvalidation$finalModel, test, type = "class")
+
+# Checking classification metrics
+confusion_matrix_rf_crossvalidation <- table(test_pred_rf_crossvalidation, test$maior_1m)  
+confusion_matrix_rf_crossvalidation
+
+metrics(confusion_matrix_rf_crossvalidation)
+
+```
+
+### Paper technique
+
+```{r paper-technique22}
+
+# Support Vector Machine Radial
+model_cv_svm_radial <- train(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height +
+                         dominant_color.histogram_0 +
+                         dominant_color.histogram_1 +
+                         dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         dominant_color.histogram_4 +
+                         dominant_color.histogram_5 +
+                         dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         dominant_color.histogram_8 +
+                         dominant_color.histogram_9 +
+                         # dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present +
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames +
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         shot_detection.transition_histogram_0 +
+                         shot_detection.transition_histogram_1 +
+                         other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity,
+                         data = train, method = "svmRadial", trControl = tr)
+
+# model_cv_svm_radial
+
+
+# Predicting o test set
+test_pred_svm_radial <- predict(model_cv_svm_radial, test)
+
+# Checking classification metrics
+confusion_matrix_svm_radial <- confusionMatrix(test_pred_svm_radial, test$maior_1m)
+confusion_matrix_svm_radial
+
+metrics(as.matrix(confusion_matrix_svm_radial$table))
+
+
+```
+
+### Other models
+
+Ajustando outros modelos de machine larning para comparação.
+
+```{r cross-validation-outros22}
+# Support Vector Machine Linear
+model_cv_svm_linear <- train(maior_1m ~ 
+                         general.duration +
+                         general.fps +
+                         general.frame_count +
+                         general.frame_size.height +
+                         dominant_color.histogram_0 +
+                         dominant_color.histogram_1 +
+                         dominant_color.histogram_2 +
+                         dominant_color.histogram_3 +
+                         dominant_color.histogram_4 +
+                         dominant_color.histogram_5 +
+                         dominant_color.histogram_6 +
+                         dominant_color.histogram_7 +
+                         dominant_color.histogram_8 +
+                         dominant_color.histogram_9 +
+                         dominant_color.value +
+                         face_detection.average_face2frame_ratio + 
+                         face_detection.average_face_count_per_frame + 
+                         face_detection.average_face_present +
+                         text_detection.average_text2frame_ratio +
+                         text_detection.average_text_frames +
+                         shot_detection.average_shot_length + 
+                         shot_detection.shots_count +
+                         shot_detection.transition_histogram_0 +
+                         shot_detection.transition_histogram_1 +
+                         other.average_movie_speed +
+                         other.clutter_metric +
+                         rigidity.average_rigidity,
+                         data = train, method = "svmLinear", trControl = tr)
+
+# model_cv_svm_linear
+
+# Predicting on test set
+test_pred_svm_linear <- predict(model_cv_svm_linear, test)
+# Checking classification metrics
+
+confusion_matrix_svm_linear <- confusionMatrix(test_pred_svm_linear, test$maior_1m)
+confusion_matrix_svm_linear
+
+metrics(as.matrix(confusion_matrix_svm_linear$table))
+
+```
+
+
 
 
 
